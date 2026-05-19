@@ -1464,7 +1464,8 @@ function buscarTardanzas() {
         return;
     }
     
-    tbody.innerHTML = gruposFiltrados.map(g => {
+    // Construir filas normales
+    const filasHTML = gruposFiltrados.map(g => {
         const fechaUltima = g.fechas[g.fechas.length-1] ? new Date(g.fechas[g.fechas.length-1]).toLocaleDateString('es-DO') : '-';
         let colorFondo = '';
         let icono = '';
@@ -1499,6 +1500,24 @@ function buscarTardanzas() {
         </tr>
     `;
     }).join('');
+
+    // Fila de total acumulado (solo si se buscó un estudiante específico)
+    const buscarVal = document.getElementById('buscarTard').value.trim();
+    let filaTotal = '';
+    if (buscarVal && gruposFiltrados.length > 0) {
+        const totalAcumulado = gruposFiltrados.reduce((sum, g) => sum + g.total, 0);
+        const nombreEstudiante = gruposFiltrados[0].estudiante;
+        filaTotal = `
+        <tr style="background-color:#1e3a5f;color:white;">
+            <td colspan="4" style="text-align:right;font-weight:700;padding:10px 14px;font-size:0.95em;">
+                📊 Total acumulado de tardanzas — ${nombreEstudiante}
+            </td>
+            <td style="font-weight:700;font-size:1.1em;padding:10px 14px;">${totalAcumulado}</td>
+            <td></td>
+        </tr>`;
+    }
+
+    tbody.innerHTML = filasHTML + filaTotal;
     
     // Agregar event listeners a los botones de circular
     setTimeout(() => {
