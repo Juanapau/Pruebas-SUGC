@@ -1504,10 +1504,15 @@ function buscarTardanzas() {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#999;">No hay estudiantes con más de 12 tardanzas acumuladas</td></tr>';
             return;
         }
-        tbody.innerHTML = conMas10.map((e, idx) => `
+        tbody.innerHTML = conMas10.map((e, idx) => {
+            const esSexto = ['6toA','6toB','6toC'].includes(e.curso);
+            return `
             <tr style="background-color:#f8d7da;">
                 <td style="color:#999;font-size:0.85em;">${idx + 1}</td>
-                <td><strong>🔴 ${e.estudiante}</strong></td>
+                <td>
+                    <strong>🔴 ${e.estudiante}</strong>
+                    ${esSexto ? '<span style="margin-left:8px;background:#6b7280;color:white;padding:2px 8px;border-radius:10px;font-size:0.78em;font-weight:600;">No aplica</span>' : ''}
+                </td>
                 <td>${e.curso}</td>
                 <td colspan="2">
                     <span style="background:#dc2626;color:white;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.95em;">
@@ -1515,8 +1520,8 @@ function buscarTardanzas() {
                     </span>
                 </td>
                 <td><span style="color:#999;font-size:0.85em;">-</span></td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
         return;
     }
 
