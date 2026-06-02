@@ -4445,6 +4445,10 @@ function crearModalReportes() {
                     <h4>Contactos</h4>
                     <div class="number" id="statContactos">0</div>
                 </div>
+                <div class="stat-card">
+                    <h4>Familias</h4>
+                    <div class="number" id="statFamilias">0</div>
+                </div>
             </div>
             
             <hr style="margin:40px 0;">
@@ -4759,6 +4763,20 @@ async function cargarDatosYActualizarEstadisticas() {
     if (statTardanzas) statTardanzas.textContent = datosTardanzas.length;
     if (statEstudiantes) statEstudiantes.textContent = datosEstudiantes.length;
     if (statContactos) statContactos.textContent = datosContactos.length;
+
+    // Calcular familias por los dos primeros apellidos del estudiante
+    const statFamilias = document.getElementById('statFamilias');
+    if (statFamilias) {
+        const familias = new Set(
+            datosEstudiantes.map(e => {
+                const nombre = (e['Nombre Completo'] || e.nombre || '').trim();
+                const partes = nombre.split(' ');
+                // Tomar los dos primeros apellidos (primeras dos palabras)
+                return partes.slice(0, 2).join(' ').toLowerCase();
+            }).filter(f => f.trim() !== '')
+        );
+        statFamilias.textContent = familias.size;
+    }
     
     // Actualizar estadísticas de conductas graves usando la función dedicada
     actualizarEstadisticasConductas();
