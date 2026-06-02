@@ -4767,12 +4767,18 @@ async function cargarDatosYActualizarEstadisticas() {
     // Calcular familias por los dos primeros apellidos del estudiante
     const statFamilias = document.getElementById('statFamilias');
     if (statFamilias) {
+        const normalizarTexto = str => str
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes
+            .replace(/\s+/g, ' ')                              // espacios múltiples → uno
+            .trim();
+
         const familias = new Set(
             datosEstudiantes.map(e => {
-                const nombre = (e['Nombre Completo'] || e.nombre || '').trim();
-                const partes = nombre.split(' ');
-                // Tomar los dos primeros apellidos (primeras dos palabras)
-                return partes.slice(0, 2).join(' ').toLowerCase();
+                const nombre = normalizarTexto(e['Nombre Completo'] || e.nombre || '');
+                const partes = nombre.split(' ').filter(p => p.length > 0);
+                // Dos primeras palabras = los dos apellidos paternos en formato dominicano
+                return partes.slice(0, 2).join(' ');
             }).filter(f => f.trim() !== '')
         );
         statFamilias.textContent = familias.size;
