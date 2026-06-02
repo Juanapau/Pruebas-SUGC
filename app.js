@@ -4429,25 +4429,25 @@ function crearModalReportes() {
         <div class="modal-body">
             <h3>Estadísticas Generales</h3>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <h4>Incidencias</h4>
-                    <div class="number" id="statIncidencias">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);color:white;border-radius:12px;">
+                    <h4 style="color:#dc2626;margin:0 0 8px;">🚨 Incidencias</h4>
+                    <div class="number" id="statIncidencias" style="color:#dc2626;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Tardanzas</h4>
-                    <div class="number" id="statTardanzas">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);color:white;border-radius:12px;">
+                    <h4 style="color:#d97706;margin:0 0 8px;">⏰ Tardanzas</h4>
+                    <div class="number" id="statTardanzas" style="color:#d97706;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Estudiantes</h4>
-                    <div class="number" id="statEstudiantes">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);color:white;border-radius:12px;">
+                    <h4 style="color:#1e3a5f;margin:0 0 8px;">🎓 Estudiantes</h4>
+                    <div class="number" id="statEstudiantes" style="color:#1e3a5f;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Contactos</h4>
-                    <div class="number" id="statContactos">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:white;border-radius:12px;">
+                    <h4 style="color:#059669;margin:0 0 8px;">📞 Contactos</h4>
+                    <div class="number" id="statContactos" style="color:#059669;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Familias</h4>
-                    <div class="number" id="statFamilias">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);color:white;border-radius:12px;">
+                    <h4 style="color:#7c3aed;margin:0 0 8px;">🏠 Familias</h4>
+                    <div class="number" id="statFamilias" style="color:#7c3aed;font-size:2em;font-weight:700;">0</div>
                 </div>
             </div>
             
