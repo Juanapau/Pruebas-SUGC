@@ -4764,22 +4764,13 @@ async function cargarDatosYActualizarEstadisticas() {
     if (statEstudiantes) statEstudiantes.textContent = datosEstudiantes.length;
     if (statContactos) statContactos.textContent = datosContactos.length;
 
-    // Calcular familias por los dos primeros apellidos del estudiante
+    // Calcular familias usando el campo 'Apellido Familiar' de Google Sheets
     const statFamilias = document.getElementById('statFamilias');
     if (statFamilias) {
-        const normalizarTexto = str => str
-            .toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes
-            .replace(/\s+/g, ' ')                              // espacios múltiples → uno
-            .trim();
-
         const familias = new Set(
-            datosEstudiantes.map(e => {
-                const nombre = normalizarTexto(e['Nombre Completo'] || e.nombre || '');
-                const partes = nombre.split(' ').filter(p => p.length > 0);
-                // Dos primeras palabras = los dos apellidos paternos en formato dominicano
-                return partes.slice(0, 2).join(' ');
-            }).filter(f => f.trim() !== '')
+            datosEstudiantes
+                .map(e => (e['Apellido Familiar'] || '').trim().toLowerCase())
+                .filter(f => f !== '')
         );
         statFamilias.textContent = familias.size;
     }
