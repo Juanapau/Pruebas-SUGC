@@ -252,31 +252,38 @@ header { flex-direction: column; text-align: center; }
 
 <div class="stats-grid">
 <!-- TARJETA 1: TOTAL INCIDENCIAS -->
-<div class="stat-card">
-<div class="icon">📋</div>
-<span class="number" id="totalIncidencias">0</span>
-<span class="label">Total Incidencias</span>
+<div class="stat-card" style="background:linear-gradient(135deg,#fef2f2,#fee2e2);border-top:none;">
+<div class="icon">🚨</div>
+<span class="number" id="totalIncidencias" style="color:#dc2626;">0</span>
+<span class="label" style="color:#dc2626;">Total Incidencias</span>
 </div>
 
 <!-- TARJETA 2: TOTAL TARDANZAS -->
-<div class="stat-card">
+<div class="stat-card" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border-top:none;">
 <div class="icon">⏰</div>
-<span class="number" id="totalTardanzas">0</span>
-<span class="label">Total Tardanzas</span>
+<span class="number" id="totalTardanzas" style="color:#d97706;">0</span>
+<span class="label" style="color:#d97706;">Total Tardanzas</span>
 </div>
 
 <!-- TARJETA 3: ESTUDIANTES REGISTRADOS -->
-<div class="stat-card">
-<div class="icon">👥</div>
-<span class="number" id="totalEstudiantes">0</span>
-<span class="label">Estudiantes Registrados</span>
+<div class="stat-card" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border-top:none;">
+<div class="icon">🎓</div>
+<span class="number" id="totalEstudiantes" style="color:#1e3a5f;">0</span>
+<span class="label" style="color:#1e3a5f;">Estudiantes Registrados</span>
 </div>
 
 <!-- TARJETA 4: CONTACTOS REGISTRADOS -->
-<div class="stat-card">
+<div class="stat-card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-top:none;">
 <div class="icon">📞</div>
-<span class="number" id="totalContactos">0</span>
-<span class="label">Contactos Registrados</span>
+<span class="number" id="totalContactos" style="color:#059669;">0</span>
+<span class="label" style="color:#059669;">Contactos Registrados</span>
+</div>
+
+<!-- TARJETA 5: FAMILIAS -->
+<div class="stat-card" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);border-top:none;">
+<div class="icon">🏠</div>
+<span class="number" id="totalFamilias" style="color:#7c3aed;">0</span>
+<span class="label" style="color:#7c3aed;">Familias</span>
 </div>
 </div>
 
@@ -425,6 +432,14 @@ setEl('totalIncidencias', incidencias.length);
 setEl('totalTardanzas',   tardanzas.length);
 setEl('totalEstudiantes', estudiantes.length);
 setEl('totalContactos',   contactos.length);
+
+// Calcular familias usando el campo 'Apellido Familiar' de Google Sheets
+const familias = new Set(
+    estudiantes
+        .map(e => (e['Apellido Familiar'] || '').trim().toLowerCase())
+        .filter(f => f !== '')
+);
+setEl('totalFamilias', familias.size);
 
 console.log(`✅ Cargado: ${incidencias.length} incidencias, ${tardanzas.length} tardanzas, ${estudiantes.length} estudiantes, ${contactos.length} contactos`);
 
