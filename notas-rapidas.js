@@ -110,7 +110,7 @@ async function guardarNotaEnGoogleSheets(nota) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(nota)
+            body: JSON.stringify({...nota, hoja: (urlNotasRapidas.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notas'})
         });
 
         console.log('✅ Nota guardada en Google Sheets');
@@ -135,10 +135,7 @@ async function actualizarNotaEnGoogleSheets(nota) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                ...nota,
-                accion: 'actualizar'
-            })
+            body: JSON.stringify({...nota, accion: 'actualizar', hoja: (urlNotasRapidas.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notas'})
         });
 
         console.log('✅ Nota actualizada en Google Sheets');
@@ -163,10 +160,7 @@ async function eliminarNotaDeGoogleSheets(id) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                id: id,
-                accion: 'eliminar'
-            })
+            body: JSON.stringify({id: id, accion: 'eliminar', hoja: (urlNotasRapidas.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notas'})
         });
 
         console.log('✅ Nota eliminada de Google Sheets');
