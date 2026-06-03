@@ -2,29 +2,28 @@
 // SISTEMA DE GESTIÓN DE CONVIVENCIA CENSA
 // ========================================
 
-// 👉 CONFIGURACIÓN DE URLs - Cambia aquí las URLs de Google Sheets si es necesario
+// ============================================================
+// CONFIGURACIÓN — URL ÚNICA DEL SISTEMA UNIFICADO
+// 👉 Reemplaza URL_UNICA con la URL de tu nuevo Apps Script
+// ============================================================
+const URL_BASE = 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec';
+
+// Genera automáticamente las URLs por hoja usando el parámetro ?hoja=
 let CONFIG = {
-    // 👉 URL de Incidencias
-    urlIncidencias: 'https://script.google.com/macros/s/AKfycbwnCHIHNum-8uCHLbuE5NvwJeVmVMF6hCLWOAQQRUOwsU5GK_vpkrxifDFlMat1tP-z/exec',
-    // 👉 URL de Tardanzas
-    urlTardanzas: 'https://script.google.com/macros/s/AKfycbxI2JCRc-f0MdokDyepK_UOPf_gAbjYpCWzqe6ShqhRIP7uurohjBdswChKHaExsT2Riw/exec',
-    // 👉 URL de Contactos
-    urlContactos: 'https://script.google.com/macros/s/AKfycbxcnvwmyorCWze_CkDPEUtdHPpD0qPbGCtse4Ku16yxwhVo-8AjnXpKTudVi-0dVwOK/exec',
-    // 👉 URL de Estudiantes
-    urlEstudiantes: 'https://script.google.com/macros/s/AKfycby-ceKgHZzTxQzcVcNiOWaN5aNDoqtIlihVcOZAp0_5hIVcv115GKHtfdjFPq43ttCEuA/exec',
-    // 👉 URL de Reuniones
-    urlReuniones: 'https://script.google.com/macros/s/AKfycbxjky9LnAAqElohVjgLESUA2nh-ICXYWNDMGkVfGjwVEb1tc0HQAtg-sayrFMXH788aLA/exec',
-    // 👉 URL de Notas Rápidas
-    urlNotasRapidas: 'https://script.google.com/macros/s/AKfycbz-Dka2Nj27ArjgQhR72s5wl8AohebgppDmnWux4rnLrEG5zQyOco9uwxlJqgAzJtW17Q/exec',
-     // 👉 URL de Maestros
-    urlMaestros: 'https://script.google.com/macros/s/AKfycbxTKAwY9m_AuxV-d9IsOaa_IDv1ZAvWv26RdgiIzD2Y6ucX_CtKVjrWbnR5Fefd12uV/exec',
-    urlHorarios: 'https://script.google.com/macros/s/AKfycbxF3w0jVliGMHStLYA5Sp_K5CHaamF1EM26_ilaab8rulNdENEZffU_N2wsgIe-fM65/exec', // 👉 URL de Horarios de Maestros
-     // 👉 URL de Notificaciones
-    urlNotificaciones: 'https://script.google.com/macros/s/AKfycbxza27B1vj81BpWe_8qrsQusxE0YC2FzoY1j4yAKkG3uq89gA1xIljm3PuWCQljJojZ2Q/exec'
+    urlIncidencias:   URL_BASE + '?hoja=Incidencias',
+    urlTardanzas:     URL_BASE + '?hoja=Tardanzas',
+    urlContactos:     URL_BASE + '?hoja=Contactos',
+    urlEstudiantes:   URL_BASE + '?hoja=Estudiantes',
+    urlReuniones:     URL_BASE + '?hoja=Reuniones',
+    urlNotasRapidas:  URL_BASE + '?hoja=Notas',
+    urlMaestros:      URL_BASE + '?hoja=Maestros',
+    urlHorarios:      URL_BASE + '?hoja=Horarios',
+    urlNotificaciones: URL_BASE + '?hoja=Notificaciones'
 };
 
 // Guardar URLs predeterminadas (las del código)
 const CONFIG_PREDETERMINADO = { ...CONFIG };
+// Nota: para cambiar la URL base edita URL_BASE arriba
 
 // Almacenamiento de datos local
 let datosIncidencias = [];
