@@ -510,6 +510,7 @@ const contacto = {
 console.log('📤 Enviando contacto...');
 
 const formData = new FormData();
+formData.append('hoja', 'Contactos');
 formData.append('accion', 'guardarContacto');
 formData.append('datos', JSON.stringify(contacto));
 
