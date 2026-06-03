@@ -568,6 +568,7 @@ btnSubmit.innerHTML = 'Registrar Incidencia';
 async function enviarAGoogleSheets(datos) {
 try {
 const formData = new URLSearchParams();
+formData.append('hoja', 'Incidencias');
 for (const key in datos) {
 formData.append(key, datos[key]);
 }
