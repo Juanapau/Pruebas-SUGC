@@ -98,6 +98,8 @@ class NotificacionesGoogleSheets {
 
         try {
             const formData = new URLSearchParams();
+            const _hojaNotif = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
+            formData.append('hoja', _hojaNotif);
             formData.append('action', 'agregar');
             
             for (const key in notificacion) {
@@ -141,6 +143,8 @@ class NotificacionesGoogleSheets {
 
             // 2. Enviar a Google Sheets (IGUAL QUE marcarTodasLeidas)
             const formData = new URLSearchParams();
+            const _hojaNotif2 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
+            formData.append('hoja', _hojaNotif2);
             formData.append('action', 'marcarLeida');
             formData.append('idUnico', idUnico);
 
@@ -172,6 +176,8 @@ class NotificacionesGoogleSheets {
             actualizarPanelNotificaciones();
 
             const formData = new URLSearchParams();
+            const _hojaNotif3 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
+            formData.append('hoja', _hojaNotif3);
             formData.append('action', 'eliminar');
             formData.append('idUnico', idUnico);
 
@@ -204,6 +210,8 @@ class NotificacionesGoogleSheets {
             actualizarPanelNotificaciones();
 
             const formData = new URLSearchParams();
+            const _hojaNotif4 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
+            formData.append('hoja', _hojaNotif4);
             formData.append('action', 'marcarTodasLeidas');
             formData.append('usuario', this.usuarioActual);
 
