@@ -4,7 +4,7 @@
 // ========================================
 
 // 👉 CONFIGURACIÓN DE URL - Cambia aquí la URL de Google Sheets si es necesario
-let urlNotasRapidas = 'https://script.google.com/macros/s/AKfycbz-Dka2Nj27ArjgQhR72s5wl8AohebgppDmnWux4rnLrEG5zQyOco9uwxlJqgAzJtW17Q/exec';
+let urlNotasRapidas = 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Notas';
 let datosNotas = [];
 
 // ========================================
