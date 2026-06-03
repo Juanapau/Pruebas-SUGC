@@ -5,7 +5,7 @@
 // ========================================
 
 // 👉 CONFIGURACIÓN DE URL
-let urlNotificaciones = 'https://script.google.com/macros/s/AKfycbxza27B1vj81BpWe_8qrsQusxE0YC2FzoY1j4yAKkG3uq89gA1xIljm3PuWCQljJojZ2Q/exec';
+let urlNotificaciones = 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Notificaciones';
 
 // Variables globales
 let datosNotificaciones = [];
