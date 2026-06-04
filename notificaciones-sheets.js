@@ -46,7 +46,8 @@ class NotificacionesGoogleSheets {
 
         try {
             const timestamp = new Date().getTime();
-            const response = await fetch(`${this.url}?action=leer&t=${timestamp}`);
+            const sep = this.url.includes('?') ? '&' : '?';
+            const response = await fetch(`${this.url}${sep}t=${timestamp}`);
             
             if (response.ok) {
                 const data = await response.json();
@@ -97,19 +98,14 @@ class NotificacionesGoogleSheets {
         };
 
         try {
-            const formData = new URLSearchParams();
             const _hojaNotif = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
-            formData.append('hoja', _hojaNotif);
-            formData.append('action', 'agregar');
-            
-            for (const key in notificacion) {
-                formData.append(key, notificacion[key]);
-            }
+            const payload = { hoja: _hojaNotif, action: 'agregar', ...notificacion };
+            const urlConParams = this.url.split('?')[0] + '?' + new URLSearchParams(payload).toString();
 
-            fetch(this.url, {
+            fetch(urlConParams, {
                 method: 'POST',
                 mode: 'no-cors',
-                body: formData
+                redirect: 'follow'
             }).catch(error => {
                 console.log('Error al enviar:', error);
             });
@@ -141,20 +137,11 @@ class NotificacionesGoogleSheets {
                 console.warn('⚠️ [JS] No encontrada localmente');
             }
 
-            // 2. Enviar a Google Sheets (IGUAL QUE marcarTodasLeidas)
-            const formData = new URLSearchParams();
+            // 2. Enviar a Google Sheets
             const _hojaNotif2 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
-            formData.append('hoja', _hojaNotif2);
-            formData.append('action', 'marcarLeida');
-            formData.append('idUnico', idUnico);
-
+            const urlML = this.url.split('?')[0] + '?' + new URLSearchParams({ hoja: _hojaNotif2, action: 'marcarLeida', idUnico }).toString();
             console.log('📤 [JS] Enviando a Google Sheets...');
-
-            fetch(this.url, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            }).catch(error => {
+            fetch(urlML, { method: 'POST', mode: 'no-cors', redirect: 'follow' }).catch(error => {
                 console.log('Error al enviar:', error);
             });
 
@@ -175,17 +162,9 @@ class NotificacionesGoogleSheets {
             datosNotificaciones = datosNotificaciones.filter(n => n.ID_Unico !== idUnico);
             actualizarPanelNotificaciones();
 
-            const formData = new URLSearchParams();
             const _hojaNotif3 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
-            formData.append('hoja', _hojaNotif3);
-            formData.append('action', 'eliminar');
-            formData.append('idUnico', idUnico);
-
-            fetch(this.url, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            }).catch(error => {
+            const urlEl = this.url.split('?')[0] + '?' + new URLSearchParams({ hoja: _hojaNotif3, action: 'eliminar', idUnico }).toString();
+            fetch(urlEl, { method: 'POST', mode: 'no-cors', redirect: 'follow' }).catch(error => {
                 console.log('Error al enviar:', error);
             });
 
@@ -209,17 +188,9 @@ class NotificacionesGoogleSheets {
             });
             actualizarPanelNotificaciones();
 
-            const formData = new URLSearchParams();
             const _hojaNotif4 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
-            formData.append('hoja', _hojaNotif4);
-            formData.append('action', 'marcarTodasLeidas');
-            formData.append('usuario', this.usuarioActual);
-
-            fetch(this.url, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            }).catch(error => {
+            const urlMT = this.url.split('?')[0] + '?' + new URLSearchParams({ hoja: _hojaNotif4, action: 'marcarTodasLeidas', usuario: this.usuarioActual }).toString();
+            fetch(urlMT, { method: 'POST', mode: 'no-cors', redirect: 'follow' }).catch(error => {
                 console.log('Error al enviar:', error);
             });
 
@@ -244,15 +215,9 @@ class NotificacionesGoogleSheets {
             });
             actualizarPanelNotificaciones();
 
-            const formData = new URLSearchParams();
-            formData.append('action', 'limpiarLeidas');
-            formData.append('usuario', this.usuarioActual);
-
-            fetch(this.url, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            }).catch(error => {
+            const _hojaNotif5 = (this.url.match(/[?&]hoja=([^&]+)/) || [])[1] || 'Notificaciones';
+            const urlLimpia = this.url.split('?')[0] + '?' + new URLSearchParams({ hoja: _hojaNotif5, action: 'limpiarLeidas', usuario: this.usuarioActual }).toString();
+            fetch(urlLimpia, { method: 'POST', mode: 'no-cors', redirect: 'follow' }).catch(error => {
                 console.log('Error al enviar:', error);
             });
 
