@@ -412,7 +412,7 @@ try {
 const response = await fetch(CONFIG.urlDocentes);
 const data = await response.json();
 if (Array.isArray(data) && data.length > 0) {
-docentes = data.map(d => d['Nombre Completo'] || d['Nombre'] || d.nombre || '').filter(n => n.trim() !== '');
+docentes = data.map(d => d['Nombre Docente'] || d['Nombre Completo'] || d['Nombre'] || d.nombre || '').filter(n => n.trim() !== '');
 console.log('✅ ' + docentes.length + ' docentes cargados');
 }
 } catch (error) {
