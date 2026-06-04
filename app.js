@@ -5740,30 +5740,33 @@ async function enviarGoogleSheets(url, datos, accion = 'agregar', indice = null)
     }
     
     try {
-        // Convertir datos a FormData (compatible con no-cors)
-        const formData = new URLSearchParams();
-        
-        // Si es actualización, agregar campos especiales
+        // Extraer hoja de la URL
+        const hojaMatch = url.match(/[?&]hoja=([^&]+)/);
+        const hoja = hojaMatch ? hojaMatch[1] : '';
+
+        // Construir objeto con todos los parámetros
+        const payload = { hoja };
         if (accion === 'actualizar' && indice !== null) {
-            formData.append('accion', 'actualizar');
-            formData.append('indice', indice);
+            payload.accion = 'actualizar';
+            payload.indice = indice;
         }
-        
-        // Agregar todos los datos
         for (const key in datos) {
-            formData.append(key, datos[key]);
+            payload[key] = datos[key];
         }
-        
-        const response = await fetch(url, {
+
+        // Enviar como parámetros en la URL (GET con datos) — evita el problema
+        // del redirect de Apps Script que borra el body en POST no-cors
+        const urlConParams = url.split('?')[0] + '?' + new URLSearchParams(payload).toString();
+
+        const response = await fetch(urlConParams, {
             method: 'POST',
-            body: formData
+            mode: 'no-cors',
+            redirect: 'follow'
         });
         
         console.log(`✅ ${accion === 'actualizar' ? 'Registro actualizado' : 'Registro guardado'}`);
     } catch (error) {
         console.error('❌ Error al enviar a Google Sheets (sin conexión):', error);
-        
-        // Si falla (sin internet), guardar en cola offline
         guardarEnColaOffline(url, datos, accion, indice);
     }
 }
@@ -5974,13 +5977,18 @@ async function enviarGoogleSheetsMasivo(url, arrayDatos) {
     if (!url || !arrayDatos || arrayDatos.length === 0) return;
     
     try {
-        const formData = new FormData();
-        formData.append('bulk', 'true');
-        formData.append('data', JSON.stringify(arrayDatos));
-        
-        const response = await fetch(url, {
+        const hojaMatch = url.match(/[?&]hoja=([^&]+)/);
+        const hoja = hojaMatch ? hojaMatch[1] : '';
+
+        const urlConParams = url.split('?')[0] + '?' + new URLSearchParams({
+            hoja: hoja,
+            bulk: 'true',
+            data: JSON.stringify(arrayDatos)
+        }).toString();
+
+        const response = await fetch(urlConParams, {
             method: 'POST',
-            body: formData,
+            mode: 'no-cors',
             redirect: 'follow'
         });
         
