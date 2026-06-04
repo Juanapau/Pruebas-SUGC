@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <script src="./auth-guard.js"></script>
+    <script src="./auth-guard.js?v=2.0.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema UGC - Unidad de Gestión de la Convivencia</title>
@@ -2440,7 +2440,7 @@ header img {
         });
     </script>
     
-    <script src="app.js"></script>
+    <script src="app.js?v=2.0.0"></script>
 
     <!-- Panel Lateral del Régimen Disciplinario -->
     <div class="regimen-overlay" id="regimenOverlay" onclick="closeRegimenPanel()"></div>
@@ -2480,7 +2480,7 @@ header img {
     </div>
 
     <!-- Scripts para el panel del régimen -->
-    <script src="regimen-content.js"></script>
+    <script src="regimen-content.js?v=2.0.0"></script>
     <script>
         // Filtrar régimen por tipo
         function cambiarFiltro(btn, tipo) {
@@ -2649,19 +2649,15 @@ header img {
     </div><!-- Cierre de notas-panel -->
 
     <!-- Script del Sistema de Notas -->
-    <script src="notas-rapidas.js"></script>
-    <script src="notificaciones-sheets.js"></script>
+    <script src="notas-rapidas.js?v=2.0.0"></script>
+    <script src="notificaciones-sheets.js?v=2.0.0"></script>
     
-    <!-- PWA Service Worker DESACTIVADO en entorno de pruebas -->
+    <!-- PWA Service Worker Registration -->
     <script>
+        // Registrar Service Worker para PWA
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => {
-                regs.forEach(r => r.unregister());
-            });
-        }
-        if (false && 'serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/Pruebas-SUGC/service-worker.js')
+                navigator.serviceWorker.register('/Sistema-UGC/service-worker.js')
                     .then((registration) => {
                         console.log('✅ Service Worker registrado correctamente:', registration.scope);
                         
