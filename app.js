@@ -5758,11 +5758,8 @@ async function enviarGoogleSheets(url, datos, accion = 'agregar', indice = null)
         // del redirect de Apps Script que borra el body en POST no-cors
         const urlConParams = url.split('?')[0] + '?' + new URLSearchParams(payload).toString();
 
-        const response = await fetch(urlConParams, {
-            method: 'POST',
-            mode: 'no-cors',
-            redirect: 'follow'
-        });
+        // GET es más fiable que POST con no-cors en Apps Script
+        const response = await fetch(urlConParams);
         
         console.log(`✅ ${accion === 'actualizar' ? 'Registro actualizado' : 'Registro guardado'}`);
     } catch (error) {
@@ -5986,11 +5983,8 @@ async function enviarGoogleSheetsMasivo(url, arrayDatos) {
             data: JSON.stringify(arrayDatos)
         }).toString();
 
-        const response = await fetch(urlConParams, {
-            method: 'POST',
-            mode: 'no-cors',
-            redirect: 'follow'
-        });
+        // GET es más fiable que POST con no-cors en Apps Script
+        const response = await fetch(urlConParams);
         
         console.log(`${arrayDatos.length} registros enviados masivamente a Google Sheets`);
         return true;
