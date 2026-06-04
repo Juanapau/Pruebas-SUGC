@@ -33,7 +33,7 @@
     <link rel="apple-touch-icon" sizes="152x152" href="./logo.png">
     <link rel="apple-touch-icon" sizes="180x180" href="./logo.png">
     <link rel="apple-touch-icon" sizes="167x167" href="./logo.png">
-    <link rel="manifest" href="/Pruebas-SUGC/manifest.json">
+    <link rel="manifest" href="/Sistema-UGC/manifest.json">
     
     <style>
         * {
@@ -2652,10 +2652,14 @@ header img {
     <script src="notas-rapidas.js"></script>
     <script src="notificaciones-sheets.js"></script>
     
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker DESACTIVADO en entorno de pruebas -->
     <script>
-        // Registrar Service Worker para PWA
         if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                regs.forEach(r => r.unregister());
+            });
+        }
+        if (false && 'serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/Pruebas-SUGC/service-worker.js')
                     .then((registration) => {
