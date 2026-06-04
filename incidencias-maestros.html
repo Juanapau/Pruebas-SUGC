@@ -320,14 +320,16 @@ autocomplete="off"
 </div>
 
 <div class="form-row">
-<div class="form-group">
+<div class="form-group autocomplete-container">
 <label for="docenteReporta">Docente que Reporta <span class="required">*</span></label>
 <input 
 type="text" 
 id="docenteReporta" 
-placeholder="Su nombre completo"
+placeholder="Escriba el nombre del docente..."
+autocomplete="off"
 required
 >
+<div class="suggestions" id="suggestionsDocente"></div>
 </div>
 
 <div class="form-group">
@@ -391,13 +393,32 @@ urlIncidencias: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnf
 urlEstudiantes: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Estudiantes',
 urlAppsScript: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Incidencias',
 // 🆕 URL de notificaciones
-urlNotificaciones: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Notificaciones'
+urlNotificaciones: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Notificaciones',
+urlDocentes: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec?hoja=Docentes'
 };
 
 // Hacer que urlNotificaciones esté disponible globalmente
 window.urlNotificaciones = CONFIG.urlNotificaciones;
 
 let estudiantes = [];
+let docentes = [];
+
+// ==========================================
+// CARGA DE DOCENTES
+// ==========================================
+
+async function cargarDocentes() {
+try {
+const response = await fetch(CONFIG.urlDocentes);
+const data = await response.json();
+if (Array.isArray(data) && data.length > 0) {
+docentes = data.map(d => d['Nombre Completo'] || d['Nombre'] || d.nombre || '').filter(n => n.trim() !== '');
+console.log('✅ ' + docentes.length + ' docentes cargados');
+}
+} catch (error) {
+console.error('❌ Error cargando docentes:', error);
+}
+}
 
 // ==========================================
 // CARGA DE ESTUDIANTES
@@ -488,8 +509,40 @@ suggestionsDiv.style.display = 'none';
 document.addEventListener('click', function(e) {
 if (!e.target.closest('.autocomplete-container')) {
 suggestionsDiv.style.display = 'none';
+suggestionsDocenteDiv.style.display = 'none';
 }
 });
+
+// ==========================================
+// AUTOCOMPLETADO DOCENTES
+// ==========================================
+
+const inputDocente = document.getElementById('docenteReporta');
+const suggestionsDocenteDiv = document.getElementById('suggestionsDocente');
+
+inputDocente.addEventListener('input', function() {
+const query = this.value.toLowerCase().trim();
+if (query.length < 2) {
+suggestionsDocenteDiv.style.display = 'none';
+return;
+}
+const coincidencias = docentes.filter(nombre => nombre.toLowerCase().includes(query));
+if (coincidencias.length === 0) {
+suggestionsDocenteDiv.style.display = 'none';
+return;
+}
+suggestionsDocenteDiv.innerHTML = coincidencias.slice(0, 8).map(nombre => `
+<div class="suggestion-item" onclick="seleccionarDocente('${nombre.replace(/'/g, "\'")}')">
+<span class="suggestion-name">${nombre}</span>
+</div>
+`).join('');
+suggestionsDocenteDiv.style.display = 'block';
+});
+
+function seleccionarDocente(nombre) {
+inputDocente.value = nombre;
+suggestionsDocenteDiv.style.display = 'none';
+}
 
 // ==========================================
 // ENVÍO DEL FORMULARIO
@@ -599,6 +652,7 @@ now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
 document.getElementById('fechaIncidencia').value = now.toISOString().slice(0, 16);
 
 cargarEstudiantes();
+cargarDocentes();
 
 // 🆕 INICIALIZAR SISTEMA DE NOTIFICACIONES
 if (typeof inicializarSistemaNotificaciones === 'function') {
