@@ -445,7 +445,9 @@ console.error('❌ Error cargando docentes:', error);
 async function cargarEstudiantes() {
 try {
 console.log('🔄 Cargando estudiantes...');
-const response = await fetch(CONFIG.urlEstudiantes);
+let urlEst = CONFIG.urlEstudiantes;
+if (ANIO_ACTIVO) urlEst += '&anio=' + encodeURIComponent(ANIO_ACTIVO);
+const response = await fetch(urlEst);
 const data = await response.json();
 
 if (data.values && data.values.length > 1) {
@@ -665,12 +667,12 @@ throw new Error('No se pudo conectar con Google Sheets');
 // INICIALIZACIÓN
 // ==========================================
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
 const now = new Date();
 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
 document.getElementById('fechaIncidencia').value = now.toISOString().slice(0, 16);
 
-cargarConfig();
+await cargarConfig();
 cargarEstudiantes();
 cargarDocentes();
 
