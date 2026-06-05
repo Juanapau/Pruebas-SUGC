@@ -54,6 +54,56 @@ async function cargarConfig() {
     }
 }
 
+// Año que se está visualizando en el panel (por defecto = año activo)
+let ANIO_VISTA = '';
+
+// Módulo -> página de consulta (solo lectura) usada para años pasados
+const PAGINAS_CONSULTA = {
+    'incidencias': 'incidencias-consulta.html',
+    'tardanzas':   'tardanzas-consulta.html',
+    'reuniones':   'reuniones-consulta.html',
+    'estudiantes': 'estudiantes-consulta.html',
+    'reportes':    'estadisticas-consulta.html'
+};
+
+// Llena el selector de años y aplica el modo según el año elegido
+function inicializarSelectorAnio() {
+    const sel = document.getElementById('selectorAnio');
+    if (!sel) return;
+    ANIO_VISTA = ANIO_ACTIVO;
+    const anios = (ANIOS_DISPONIBLES && ANIOS_DISPONIBLES.length) ? ANIOS_DISPONIBLES.slice() : [ANIO_ACTIVO];
+    anios.sort().reverse(); // más reciente arriba
+    sel.innerHTML = anios.map(function(a) {
+        const actual = (a === ANIO_ACTIVO);
+        return '<option value="' + a + '"' + (actual ? ' selected' : '') + '>' + a + (actual ? ' (actual)' : '') + '</option>';
+    }).join('');
+    aplicarModoVista(ANIO_ACTIVO);
+}
+
+// Cambia el año visualizado (lo llama el <select>)
+function cambiarAnioVista(anio) {
+    ANIO_VISTA = anio;
+    aplicarModoVista(anio);
+}
+
+// Modo normal (año activo) vs modo consulta (año pasado, solo lectura)
+function aplicarModoVista(anio) {
+    const esConsulta = (anio && anio !== ANIO_ACTIVO);
+    const cardMaestros  = document.getElementById('cardMaestros');
+    const cardContactos = document.getElementById('cardContactos');
+    const banner        = document.getElementById('bannerConsulta');
+    const bannerAnio    = document.getElementById('bannerConsultaAnio');
+    const btnNota       = document.querySelector('.btn-nueva-nota');
+    const btnCampana    = document.querySelector('.notificaciones-btn');
+
+    if (cardMaestros)  cardMaestros.style.display  = esConsulta ? 'none' : '';
+    if (cardContactos) cardContactos.style.display = esConsulta ? 'none' : '';
+    if (btnNota)       btnNota.style.display       = esConsulta ? 'none' : '';
+    if (btnCampana)    btnCampana.style.display    = esConsulta ? 'none' : '';
+    if (banner)        banner.style.display        = esConsulta ? 'block' : 'none';
+    if (esConsulta && bannerAnio) bannerAnio.textContent = anio;
+}
+
 // Almacenamiento de datos local
 let datosIncidencias = [];
 let datosTardanzas = [];
@@ -233,6 +283,12 @@ window.addEventListener('load', function() {
 // NAVEGACIÓN
 // ==================
 function openModule(moduleName) {
+    // En modo consulta (año pasado) abrir la página de solo lectura del año seleccionado
+    if (ANIO_VISTA && ANIO_VISTA !== ANIO_ACTIVO) {
+        const pagina = PAGINAS_CONSULTA[moduleName];
+        if (pagina) { window.location.href = pagina + '?anio=' + encodeURIComponent(ANIO_VISTA); return; }
+        if (moduleName === 'maestros' || moduleName === 'contactos') return;
+    }
     // Recargar configuración en cada apertura de módulo (importante para móviles)
     const configGuardada = localStorage.getItem('censaConfig');
     if (configGuardada) {
@@ -8114,6 +8170,7 @@ async function cargarTodosDatosAlInicio() {
     // Leer primero el año activo (hoja Config) para que las cargas y
     // los registros usen el año correcto.
     await cargarConfig();
+    inicializarSelectorAnio();
 
     const loadingText = document.getElementById('loadingText');
     const loadingScreen = document.getElementById('loadingScreen');
