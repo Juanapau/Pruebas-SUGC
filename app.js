@@ -18,12 +18,41 @@ let CONFIG = {
     urlNotasRapidas:  URL_BASE + '?hoja=Notas',
     urlMaestros:      URL_BASE + '?hoja=Maestros',
     urlHorarios:      URL_BASE + '?hoja=Horarios',
-    urlNotificaciones: URL_BASE + '?hoja=Notificaciones'
+    urlNotificaciones: URL_BASE + '?hoja=Notificaciones',
+    urlConfig:        URL_BASE + '?hoja=Config'
 };
 
 // Guardar URLs predeterminadas (las del código)
 const CONFIG_PREDETERMINADO = { ...CONFIG };
 // Nota: para cambiar la URL base edita URL_BASE arriba
+
+// ============================================================
+// HISTORIAL POR AÑO ESCOLAR
+// El año activo se lee de la hoja "Config" al iniciar. Mientras no se
+// haya cargado, queda vacío y el sistema se comporta como antes.
+// ============================================================
+let ANIO_ACTIVO = '';
+let ANIOS_DISPONIBLES = [];
+// Hojas cuyos datos se filtran y se sellan por año escolar
+const HOJAS_CON_ANIO = ['Incidencias', 'Tardanzas', 'Reuniones', 'Estudiantes'];
+
+// Lee la hoja Config y guarda el año activo y la lista de años disponibles
+async function cargarConfig() {
+    try {
+        const resp = await fetch(CONFIG.urlConfig);
+        if (!resp.ok) { console.warn('⚠️ No se pudo leer Config:', resp.status); return; }
+        const filas = await resp.json();
+        if (Array.isArray(filas) && filas.length > 0) {
+            const cfg = filas[0];
+            ANIO_ACTIVO = String(cfg['añoActivo'] || cfg['anoActivo'] || '').trim();
+            const disp = String(cfg['añosDisponibles'] || cfg['anosDisponibles'] || ANIO_ACTIVO || '');
+            ANIOS_DISPONIBLES = disp.split(',').map(s => s.trim()).filter(Boolean);
+            console.log('📅 Año activo:', ANIO_ACTIVO, '| Años disponibles:', ANIOS_DISPONIBLES);
+        }
+    } catch (err) {
+        console.error('❌ Error leyendo Config:', err);
+    }
+}
 
 // Almacenamiento de datos local
 let datosIncidencias = [];
@@ -44,7 +73,15 @@ async function cargarDatosDesdeGoogleSheets(url) {
         console.log('No hay URL configurada');
         return [];
     }
-    
+
+    // Si la hoja se filtra por año escolar y ya conocemos el año activo,
+    // agregar &anio= para traer solo los registros del año actual.
+    const mHoja = url.match(/[?&]hoja=([^&]+)/);
+    const hojaUrl = mHoja ? decodeURIComponent(mHoja[1]) : '';
+    if (ANIO_ACTIVO && HOJAS_CON_ANIO.includes(hojaUrl) && !/[?&]anio=/.test(url)) {
+        url += '&anio=' + encodeURIComponent(ANIO_ACTIVO);
+    }
+
     console.log('Cargando datos desde:', url);
     
     try {
@@ -593,7 +630,8 @@ const inc = {
     'Tipo de Conducta': document.getElementById('tipoConducta').value,
     'Descripción': document.getElementById('descripcionIncidencia').value,
     'Acciones Docente': document.getElementById('accionesDocente').value,
-    'Seguimiento UGC': document.getElementById('seguimientoUGC').value
+    'Seguimiento UGC': document.getElementById('seguimientoUGC').value,
+    'Año Escolar': ANIO_ACTIVO
 };
     
     if (modoEdicion === 'true') {
@@ -1258,7 +1296,8 @@ function registrarTardanza(e) {
         'Nombre Estudiante': estudiante,
         'Curso': curso,
         'Mes': mes,
-        'Año': año
+        'Año': año,
+        'Año Escolar': ANIO_ACTIVO
     };
     
     datosTardanzas.push(tard);
@@ -2724,7 +2763,8 @@ function registrarEstudiante(e) {
     e.preventDefault();
     const est = {
         'Nombre Completo': document.getElementById('nombreEst').value,
-        'Curso': document.getElementById('cursoEst').value
+        'Curso': document.getElementById('cursoEst').value,
+        'Año Escolar': ANIO_ACTIVO
     };
     datosEstudiantes.push(est);
     if (CONFIG.urlEstudiantes) enviarGoogleSheets(CONFIG.urlEstudiantes, est);
@@ -2750,7 +2790,8 @@ function importarEstudiantes(event) {
         jsonData.forEach(row => {
             const est = {
                 'Nombre Completo': row['Nombre Completo'] || row['Nombre'] || '',
-                'Curso': row['Curso'] || ''
+                'Curso': row['Curso'] || '',
+                'Año Escolar': ANIO_ACTIVO
             };
             if (est['Nombre Completo'] && est['Curso']) {
                 datosEstudiantes.push(est);
@@ -7011,7 +7052,8 @@ function registrarReunion(e) {
         'Acuerdos Establecidos': document.getElementById('acuerdosEstablecidos').value,
         'Fecha Seguimiento': document.getElementById('fechaSeguimiento').value,
         'Estado': document.getElementById('estadoAcuerdo').value,
-        'Observaciones': document.getElementById('observacionesReunion').value
+        'Observaciones': document.getElementById('observacionesReunion').value,
+        'Año Escolar': ANIO_ACTIVO
     };
     
     if (modoEdicion === 'true') {
@@ -8068,7 +8110,11 @@ function mostrarNotificacionToast(mensaje) {
 
 async function cargarTodosDatosAlInicio() {
     console.log('🔄 Cargando todos los datos al iniciar...');
-    
+
+    // Leer primero el año activo (hoja Config) para que las cargas y
+    // los registros usen el año correcto.
+    await cargarConfig();
+
     const loadingText = document.getElementById('loadingText');
     const loadingScreen = document.getElementById('loadingScreen');
     
