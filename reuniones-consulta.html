@@ -362,16 +362,18 @@ const reunionesBadge = totalReuniones === 1 ? 'badge-seguimiento'
 : totalReuniones === 2 ? 'badge-parcial'
 : 'badge-no-cumplido';
 
-// Badge para asistió
-const asistio = r['Asistió'] || '';
-const asistioIcon = asistio.toLowerCase().includes('sí') || asistio.toLowerCase().includes('si') 
-? '✅ Sí' 
-: asistio.toLowerCase().includes('no') 
-? '❌ No' 
-: '-';
-const asistioBadge = asistio.toLowerCase().includes('sí') || asistio.toLowerCase().includes('si')
-? 'badge-cumplido'
-: 'badge-no-cumplido';
+// Badge para asistió (lectura tolerante: acentos, mayúsculas, booleanos, clave)
+let _va = r['Asistió'];
+if (_va === undefined) _va = r['¿Asistió?'];
+if (_va === undefined) _va = r['Asistio'];
+if (_va === undefined) _va = r['asistio'];
+const asistioSi = _va === true ? true
+  : (_va === false || _va == null) ? false
+  : ['si','s','yes','y','true','verdadero','x','1'].includes(
+      String(_va).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    );
+const asistioIcon = asistioSi ? '✅ Sí' : '❌ No';
+const asistioBadge = asistioSi ? 'badge-cumplido' : 'badge-no-cumplido';
 
 return `<tr>
 <td style="font-size:0.85em;">
@@ -559,6 +561,8 @@ console.log('🤝 Módulo de reuniones (consulta) cargado');
 <script>
 (function(){
   var a = new URLSearchParams(location.search).get('anio');
+  var btn = document.querySelector('.btn-back');
+  if (btn) btn.setAttribute('href', a ? ('admin.html?anio=' + encodeURIComponent(a)) : 'consulta.html');
   if(!a) return;
   var b=document.createElement('div');
   b.textContent='🔒 Consultando el año '+a+' — solo lectura';
