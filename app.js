@@ -70,14 +70,21 @@ const PAGINAS_CONSULTA = {
 function inicializarSelectorAnio() {
     const sel = document.getElementById('selectorAnio');
     if (!sel) return;
-    ANIO_VISTA = ANIO_ACTIVO;
+
+    // Si se vuelve al panel desde una consulta con ?anio=, reabrir en modo
+    // consulta de ese año (siempre que el año exista y no sea el activo).
+    const anioURL = new URLSearchParams(location.search).get('anio') || '';
     const anios = (ANIOS_DISPONIBLES && ANIOS_DISPONIBLES.length) ? ANIOS_DISPONIBLES.slice() : [ANIO_ACTIVO];
+    const anioConsulta = (anioURL && anioURL !== ANIO_ACTIVO && anios.includes(anioURL)) ? anioURL : '';
+
+    ANIO_VISTA = anioConsulta || ANIO_ACTIVO;
     anios.sort().reverse(); // más reciente arriba
     sel.innerHTML = anios.map(function(a) {
         const actual = (a === ANIO_ACTIVO);
-        return '<option value="' + a + '"' + (actual ? ' selected' : '') + '>' + a + (actual ? ' (actual)' : '') + '</option>';
+        const seleccionado = (a === ANIO_VISTA);
+        return '<option value="' + a + '"' + (seleccionado ? ' selected' : '') + '>' + a + (actual ? ' (actual)' : '') + '</option>';
     }).join('');
-    aplicarModoVista(ANIO_ACTIVO);
+    aplicarModoVista(ANIO_VISTA);
 }
 
 // Cambia el año visualizado (lo llama el <select>)
@@ -7268,6 +7275,23 @@ function cancelarEdicionReunion() {
 }
 
 
+// Lee el valor de asistencia de una reunión de forma tolerante:
+// acepta distintas claves de columna y normaliza acentos/mayúsculas/booleanos.
+// Devuelve true si la persona asistió, false en caso contrario.
+function leerAsistio(r) {
+    if (!r) return false;
+    let v = r['Asistió'];
+    if (v === undefined) v = r['¿Asistió?'];
+    if (v === undefined) v = r['Asistio'];
+    if (v === undefined) v = r['asistio'];
+    if (v === undefined) v = r.asistio;
+    if (v === true) return true;
+    if (v === false || v === null || v === undefined) return false;
+    v = String(v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return v === 'si' || v === 's' || v === 'yes' || v === 'y' ||
+           v === 'true' || v === 'verdadero' || v === 'x' || v === '1';
+}
+
 function cargarTablaReuniones() {
     const tbody = document.getElementById('bodyReuniones');
     if (datosReuniones.length === 0) {
@@ -7322,10 +7346,11 @@ function cargarTablaReuniones() {
             colorEstado = '#856404';
         }
         
-        // Checkbox de asistencia
-        const checked = asistio === 'Sí' ? 'checked' : '';
-        const colorCheck = asistio === 'Sí' ? '#10b981' : '#9ca3af';
-        const textoCheck = asistio === 'Sí' ? 'Sí' : 'No';
+        // Checkbox de asistencia (lectura tolerante del valor guardado)
+        const asistioSi = leerAsistio(r);
+        const checked = asistioSi ? 'checked' : '';
+        const colorCheck = asistioSi ? '#10b981' : '#9ca3af';
+        const textoCheck = asistioSi ? 'Sí' : 'No';
         
         return `
         <tr onclick="editarReunion(${index})" style="cursor:pointer;" title="Click para editar">
@@ -7482,10 +7507,11 @@ function buscarReuniones() {
             colorEstado = '#856404';
         }
         
-        // Checkbox de asistencia
-        const checked = asistio === 'Sí' ? 'checked' : '';
-        const colorCheck = asistio === 'Sí' ? '#10b981' : '#9ca3af';
-        const textoCheck = asistio === 'Sí' ? 'Sí' : 'No';
+        // Checkbox de asistencia (lectura tolerante del valor guardado)
+        const asistioSi = leerAsistio(r);
+        const checked = asistioSi ? 'checked' : '';
+        const colorCheck = asistioSi ? '#10b981' : '#9ca3af';
+        const textoCheck = asistioSi ? 'Sí' : 'No';
         
         return `
         <tr onclick="editarReunion(${indiceReal})" style="cursor:pointer;" title="Click para editar">
