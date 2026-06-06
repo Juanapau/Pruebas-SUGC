@@ -287,6 +287,14 @@ cargarReuniones();
 });
 
 async function cargarDatosDesdeGoogleSheets(url) {
+// Filtro por año escolar recibido en la URL (?anio=)
+const ANIO_CONSULTA = new URLSearchParams(location.search).get('anio') || '';
+const HOJAS_CON_ANIO = ['Incidencias','Tardanzas','Reuniones','Estudiantes'];
+const mHoja = url.match(/[?&]hoja=([^&]+)/);
+const hojaUrl = mHoja ? decodeURIComponent(mHoja[1]) : '';
+if (ANIO_CONSULTA && HOJAS_CON_ANIO.includes(hojaUrl) && !/[?&]anio=/.test(url)) {
+    url += '&anio=' + encodeURIComponent(ANIO_CONSULTA);
+}
 try {
 const response = await fetch(url);
 if (!response.ok) throw new Error('Error en la respuesta');
@@ -548,5 +556,15 @@ return '';
 console.log('🤝 Módulo de reuniones (consulta) cargado');
 </script>
 
+<script>
+(function(){
+  var a = new URLSearchParams(location.search).get('anio');
+  if(!a) return;
+  var b=document.createElement('div');
+  b.textContent='🔒 Consultando el año '+a+' — solo lectura';
+  b.style.cssText='position:sticky;top:0;z-index:9999;background:#e3f2fd;color:#1976D2;font-weight:700;text-align:center;padding:8px 12px;font-size:1em;';
+  document.body.insertBefore(b, document.body.firstChild);
+})();
+</script>
 </body>
 </html>
