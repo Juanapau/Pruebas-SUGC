@@ -2281,6 +2281,21 @@ header img {
 }
         
     </style>
+    <script>
+      // Anti-parpadeo: al volver al panel en modo consulta (?anio=), ocultar de
+      // inmediato las tarjetas/botones no disponibles en consulta, antes del primer render.
+      (function(){
+        if (new URLSearchParams(location.search).get('anio')) {
+          document.documentElement.classList.add('pre-modo-consulta');
+        }
+      })();
+    </script>
+    <style>
+      html.pre-modo-consulta #cardMaestros,
+      html.pre-modo-consulta #cardContactos,
+      html.pre-modo-consulta .btn-notas-flotante,
+      html.pre-modo-consulta .notificaciones-btn { display: none !important; }
+    </style>
 </head>
 <body>
     <div class="container">
