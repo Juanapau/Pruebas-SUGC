@@ -113,6 +113,128 @@ function aplicarModoVista(anio) {
     if (esConsulta && bannerAnio) bannerAnio.textContent = anio;
 }
 
+// ============================================================
+// FASE 5 — INICIAR NUEVO AÑO ESCOLAR (cierre/inicio de año)
+// ============================================================
+
+// "2025-2026" -> "2026-2027". Si no se puede parsear, usa el año calendario.
+function calcularAnioSiguiente(anioStr) {
+    const m = String(anioStr || '').match(/(\d{4})\s*-\s*(\d{4})/);
+    if (m) { const a = parseInt(m[1], 10); return (a + 1) + '-' + (a + 2); }
+    const y = new Date().getFullYear();
+    return y + '-' + (y + 1);
+}
+
+// Año escolar esperado según la fecha (1 ago–30 jun). Julio cuenta como año anterior,
+// así el aviso solo aparece a partir del 1 de agosto.
+function calcularAnioEscolarEsperado(hoy) {
+    hoy = hoy || new Date();
+    const y = hoy.getFullYear();
+    const mes = hoy.getMonth() + 1; // 1–12
+    return (mes >= 8) ? (y + '-' + (y + 1)) : ((y - 1) + '-' + y);
+}
+
+// Detección automática + aviso al iniciar (solo admin, solo en vista del año activo).
+function verificarInicioAnioEscolar() {
+    if (typeof window.esAdministradorUGC === 'function' && !window.esAdministradorUGC()) return;
+    if (new URLSearchParams(location.search).get('anio')) return; // en modo consulta no se avisa
+    if (!ANIO_ACTIVO) return;
+
+    const esperado = calcularAnioEscolarEsperado();
+    if (esperado === ANIO_ACTIVO) return; // todo al día
+
+    // No repetir el aviso en la misma sesión si ya se mostró/pospuso
+    if (sessionStorage.getItem('avisoInicioAnio') === esperado) return;
+    sessionStorage.setItem('avisoInicioAnio', esperado);
+
+    const nuevoAnio = calcularAnioSiguiente(ANIO_ACTIVO);
+    mostrarModalConfirmacion(
+        '📅 ¿Iniciar nuevo año escolar?',
+        'Parece que comenzó el año escolar <strong>' + esperado + '</strong>, pero el año activo del sistema sigue siendo <strong>' + ANIO_ACTIVO + '</strong>.<br><br>' +
+        '¿Deseas iniciar el año <strong>' + nuevoAnio + '</strong> ahora?<br><br>' +
+        'No se borra ningún dato: el año <strong>' + ANIO_ACTIVO + '</strong> quedará disponible para consulta.',
+        true,
+        function() { ejecutarInicioNuevoAnio(nuevoAnio); },
+        'Sí, iniciar ' + nuevoAnio
+    );
+}
+
+// Botón manual del panel de Configuración (a demanda, solo admin).
+function iniciarNuevoAnio() {
+    if (typeof window.esAdministradorUGC === 'function' && !window.esAdministradorUGC()) {
+        mostrarModalConfirmacion('⚠️ Acción no permitida',
+            'Solo el usuario administrador puede iniciar un nuevo año escolar.',
+            false, null, 'Entendido');
+        return;
+    }
+    if (!ANIO_ACTIVO) {
+        mostrarModalConfirmacion('⚠️ Año activo no disponible',
+            'Aún no se cargó el año activo desde la hoja Config. Espera unos segundos e inténtalo de nuevo.',
+            false, null, 'Entendido');
+        return;
+    }
+    const nuevoAnio = calcularAnioSiguiente(ANIO_ACTIVO);
+    mostrarModalConfirmacion(
+        '📅 Iniciar nuevo año escolar',
+        'Esto cambiará el año activo de <strong>' + ANIO_ACTIVO + '</strong> a <strong>' + nuevoAnio + '</strong>.<br><br>' +
+        'No se borra ningún dato: el año <strong>' + ANIO_ACTIVO + '</strong> quedará disponible para consulta en el selector. ' +
+        'Después podrás importar el listado de estudiantes del nuevo año.<br><br>¿Deseas continuar?',
+        true,
+        function() { ejecutarInicioNuevoAnio(nuevoAnio); },
+        'Sí, iniciar ' + nuevoAnio
+    );
+}
+
+// Ejecuta el cambio de año: actualiza Config (sin borrar datos) y refresca la vista.
+async function ejecutarInicioNuevoAnio(nuevoAnio) {
+    // 1. Construir la nueva lista de años disponibles (sin duplicados)
+    let lista = (ANIOS_DISPONIBLES && ANIOS_DISPONIBLES.length) ? ANIOS_DISPONIBLES.slice() : [];
+    if (ANIO_ACTIVO && !lista.includes(ANIO_ACTIVO)) lista.push(ANIO_ACTIVO);
+    if (!lista.includes(nuevoAnio)) lista.push(nuevoAnio);
+    const listaStr = lista.join(',');
+
+    // 2. Persistir en la hoja Config (fila 2 = índice 0) reutilizando la ruta de actualización
+    try {
+        await enviarGoogleSheets(CONFIG.urlConfig, { 'añoActivo': nuevoAnio, 'añosDisponibles': listaStr }, 'actualizar', 0);
+    } catch (e) {
+        console.error('❌ Error actualizando Config:', e);
+    }
+
+    // 3. Actualizar estado local (autoridad de la sesión; no se vuelve a leer Config)
+    ANIO_ACTIVO = nuevoAnio;
+    ANIOS_DISPONIBLES = lista;
+    ANIO_VISTA = nuevoAnio;
+
+    // 4. Vaciar en memoria solo las hojas selladas por año (NO se borra nada en el Sheet)
+    datosIncidencias = [];
+    datosTardanzas = [];
+    datosReuniones = [];
+    datosEstudiantes = [];
+
+    // 5. Refrescar el selector mostrando el nuevo año como actual (sin honrar ?anio=)
+    const sel = document.getElementById('selectorAnio');
+    if (sel) {
+        const anios = lista.slice().sort().reverse();
+        sel.innerHTML = anios.map(function(a) {
+            const actual = (a === ANIO_ACTIVO);
+            return '<option value="' + a + '"' + (actual ? ' selected' : '') + '>' + a + (actual ? ' (actual)' : '') + '</option>';
+        }).join('');
+    }
+    aplicarModoVista(ANIO_ACTIVO);
+
+    // 6. Cerrar el panel de Configuración si está abierto y refrescar lo visible
+    if (typeof closeModal === 'function') closeModal('modalConfiguracion');
+    if (typeof actualizarAlertas === 'function') actualizarAlertas();
+    if (typeof cargarTablaReuniones === 'function') cargarTablaReuniones();
+    if (typeof actualizarEstadisticasReuniones === 'function') actualizarEstadisticasReuniones();
+
+    // 7. Confirmación final
+    mostrarModalConfirmacion('✅ Año escolar iniciado',
+        'El año activo ahora es <strong>' + nuevoAnio + '</strong>. Ya puedes importar el listado de estudiantes del nuevo año. ' +
+        'El año anterior queda disponible para consulta en el selector.',
+        false, null, 'Entendido');
+}
+
 // Almacenamiento de datos local
 let datosIncidencias = [];
 let datosTardanzas = [];
@@ -3919,6 +4041,17 @@ function crearModalConfiguracion() {
                             <div class="info-label">Navegador</div>
                             <div class="info-value" id="infoBrowser">-</div>
                         </div>
+                    </div>
+                    
+                    <hr style="margin:30px 0;border:none;border-top:1px solid #e5e7eb;">
+                    
+                    <h3>📅 Año Escolar</h3>
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:10px;">
+                        <p style="color:#374151;margin:0 0 8px 0;">Año activo actual: <strong>${ANIO_ACTIVO || '—'}</strong></p>
+                        <p style="color:#6b7280;font-size:0.9em;margin:0 0 16px 0;">Al iniciar un nuevo año, el sistema pasa al año siguiente. No se borra ningún dato: el año anterior queda disponible para consulta en el selector. Luego importa el listado de estudiantes del nuevo año.</p>
+                        <button type="button" class="btn btn-success" onclick="iniciarNuevoAnio()">
+                            📅 Iniciar nuevo año escolar
+                        </button>
                     </div>
                     
                     <hr style="margin:30px 0;border:none;border-top:1px solid #e5e7eb;">
@@ -8332,6 +8465,9 @@ async function cargarTodosDatosAlInicio() {
             }, 500);
         }
     }, 500);
+
+    // Fase 5: detección de inicio de año escolar (tras ocultar la pantalla de carga)
+    setTimeout(verificarInicioAnioEscolar, 1500);
 }
 
 // Función para abrir/cerrar el panel del régimen disciplinario
