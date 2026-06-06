@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estudiantes - Consulta</title>
+<link rel="icon" type="image/png" href="./logo.png">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height:100vh; padding:20px; color:#1e293b; }
+.container { max-width:1100px; margin:0 auto; }
+header { display:flex; justify-content:space-between; align-items:center; gap:16px; background:rgba(0,0,0,0.35); padding:18px 24px; border-radius:16px; margin-bottom:20px; }
+.header-left { display:flex; align-items:center; gap:14px; }
+.header-left img { width:54px; height:54px; }
+.header-title h1 { color:#fff; font-size:1.6em; }
+.header-title p { color:#90caf9; font-size:0.9em; }
+.btn-back { background:#1976D2; color:#fff; text-decoration:none; padding:10px 16px; border-radius:10px; font-weight:600; white-space:nowrap; }
+.btn-back:hover { background:#1565C0; }
+.banner-anio { background:#e3f2fd; color:#1976D2; font-weight:700; text-align:center; padding:10px; border-radius:12px; margin-bottom:16px; font-size:1.05em; }
+.card { background:#fff; border-radius:16px; padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
+.stats { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
+.stat { flex:1; min-width:160px; background:#f1f8ff; border:1px solid #cfe8ff; border-radius:12px; padding:16px; text-align:center; }
+.stat .num { font-size:2em; font-weight:800; color:#1976D2; }
+.stat .lbl { color:#475569; font-weight:600; }
+.controls { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+.controls input, .controls select { padding:10px 12px; border:1px solid #cbd5e1; border-radius:10px; font-size:0.95em; }
+.controls input { flex:1; min-width:200px; }
+table { width:100%; border-collapse:collapse; }
+th, td { text-align:left; padding:10px 12px; border-bottom:1px solid #e2e8f0; }
+th { background:#1976D2; color:#fff; position:sticky; top:0; }
+tr:hover td { background:#f8fafc; }
+.curso-badge { background:#e8f5e9; color:#2e7d32; padding:3px 10px; border-radius:20px; font-weight:600; font-size:0.85em; }
+.loading, .empty { text-align:center; padding:40px; color:#64748b; }
+.tabla-wrap { max-height:60vh; overflow:auto; border-radius:12px; border:1px solid #e2e8f0; }
+@media (max-width:600px){ header{flex-direction:column; text-align:center;} .header-left{flex-direction:column;} }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-left">
+      <img src="./logo.png" alt="Logo" onerror="this.style.display='none'">
+      <div class="header-title">
+        <h1>Listado de Estudiantes</h1>
+        <p>Solo Lectura - PNSA</p>
+      </div>
+    </div>
+    <a href="consulta.html" class="btn-back">← Volver al Dashboard</a>
+  </header>
+
+  <div id="bannerAnio" class="banner-anio" style="display:none;"></div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">Estudiantes</div></div>
+      <div class="stat"><div class="num" id="statCursos">0</div><div class="lbl">Cursos</div></div>
+    </div>
+    <div class="controls">
+      <input type="text" id="buscar" placeholder="🔍 Buscar por nombre..." oninput="render()">
+      <select id="filtroCurso" onchange="render()"><option value="">Todos los cursos</option></select>
+    </div>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th style="width:60px;">#</th><th>Nombre Completo</th><th style="width:160px;">Curso</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="3" class="loading">Cargando estudiantes...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const URL_BASE = 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec';
+const ANIO_CONSULTA = new URLSearchParams(location.search).get('anio') || '';
+let ESTUDIANTES = [];
+
+function norm(s){ return (s||'').toString().toLowerCase().trim(); }
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function cargar(){
+  let url = URL_BASE + '?hoja=Estudiantes';
+  if (ANIO_CONSULTA) url += '&anio=' + encodeURIComponent(ANIO_CONSULTA);
+  try{
+    const resp = await fetch(url);
+    const data = await resp.json();
+    ESTUDIANTES = Array.isArray(data) ? data : [];
+  }catch(e){
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="3" class="empty">Error al cargar los datos.</td></tr>';
+    return;
+  }
+  const cursos = [...new Set(ESTUDIANTES.map(e => (e['Curso']||'').toString().trim()).filter(Boolean))].sort();
+  const sel = document.getElementById('filtroCurso');
+  sel.innerHTML = '<option value="">Todos los cursos</option>' + cursos.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+  document.getElementById('statTotal').textContent = ESTUDIANTES.length;
+  document.getElementById('statCursos').textContent = cursos.length;
+  render();
+}
+
+function render(){
+  const q = norm(document.getElementById('buscar').value);
+  const curso = document.getElementById('filtroCurso').value;
+  let lista = ESTUDIANTES.slice();
+  if (curso) lista = lista.filter(e => (e['Curso']||'').toString().trim() === curso);
+  if (q) lista = lista.filter(e => norm(e['Nombre Completo']).includes(q));
+  lista.sort((a,b)=>{
+    const ca=(a['Curso']||'').toString(), cb=(b['Curso']||'').toString();
+    if(ca!==cb) return ca.localeCompare(cb);
+    return norm(a['Nombre Completo']).localeCompare(norm(b['Nombre Completo']));
+  });
+  const tb = document.getElementById('tbody');
+  if(!lista.length){ tb.innerHTML='<tr><td colspan="3" class="empty">No hay estudiantes para mostrar.</td></tr>'; return; }
+  tb.innerHTML = lista.map((e,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(e['Nombre Completo'])+'</td><td><span class="curso-badge">'+esc(e['Curso'])+'</span></td></tr>').join('');
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  if (ANIO_CONSULTA){
+    const b=document.getElementById('bannerAnio');
+    b.style.display='block';
+    b.textContent='🔒 Consultando el año '+ANIO_CONSULTA+' — solo lectura';
+  }
+  cargar();
+});
+</script>
+</body>
+</html>
