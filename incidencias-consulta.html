@@ -1115,6 +1115,8 @@ console.log('📋 Módulo de incidencias (consulta) cargado');
 <script>
 (function(){
   var a = new URLSearchParams(location.search).get('anio');
+  var btn = document.querySelector('.btn-back');
+  if (btn) btn.setAttribute('href', a ? ('admin.html?anio=' + encodeURIComponent(a)) : 'consulta.html');
   if(!a) return;
   var b=document.createElement('div');
   b.textContent='🔒 Consultando el año '+a+' — solo lectura';
