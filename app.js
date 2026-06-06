@@ -95,6 +95,8 @@ function cambiarAnioVista(anio) {
 
 // Modo normal (año activo) vs modo consulta (año pasado, solo lectura)
 function aplicarModoVista(anio) {
+    // Quitar el ocultamiento preventivo: a partir de aquí mandan los estilos inline.
+    document.documentElement.classList.remove('pre-modo-consulta');
     const esConsulta = (anio && anio !== ANIO_ACTIVO);
     const cardMaestros  = document.getElementById('cardMaestros');
     const cardContactos = document.getElementById('cardContactos');
