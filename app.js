@@ -93,7 +93,7 @@ function aplicarModoVista(anio) {
     const cardContactos = document.getElementById('cardContactos');
     const banner        = document.getElementById('bannerConsulta');
     const bannerAnio    = document.getElementById('bannerConsultaAnio');
-    const btnNota       = document.querySelector('.btn-nueva-nota');
+    const btnNota       = document.querySelector('.btn-notas-flotante');
     const btnCampana    = document.querySelector('.notificaciones-btn');
 
     if (cardMaestros)  cardMaestros.style.display  = esConsulta ? 'none' : '';
