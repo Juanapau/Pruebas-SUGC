@@ -156,6 +156,32 @@ transform: translateY(-2px);
 box-shadow: 0 5px 15px rgba(0,0,0,0.4);
 }
 
+.anio-consulta-wrap {
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.anio-consulta-wrap span {
+color: #2a5298;
+font-size: 0.78em;
+font-weight: 700;
+white-space: nowrap;
+}
+#filtroAnioConsulta {
+padding: 8px 12px;
+border: 2px solid #cbd5e1;
+border-radius: 8px;
+font-size: 0.85em;
+font-weight: 600;
+color: #1976D2;
+background: #fff;
+cursor: pointer;
+}
+#filtroAnioConsulta:focus {
+outline: none;
+border-color: #2a5298;
+}
+
 .modules-grid {
 display: grid;
 grid-template-columns: repeat(3, 1fr);
@@ -384,9 +410,17 @@ grid-column: auto;
 <p id="userCargo">🔍 Acceso de solo lectura</p>
 </div>
 </div>
+<div class="header-right">
+<div class="anio-consulta-wrap">
+<span>📅 Año:</span>
+<select id="filtroAnioConsulta" onchange="cambiarAnioConsulta(this.value)">
+<option value="">Cargando...</option>
+</select>
+</div>
 <button class="btn-logout" onclick="mostrarConfirmacionSalir()">
 🚪 Salir
 </button>
+</div>
 </div>
 </header>
 
@@ -548,6 +582,44 @@ Cancelar
 
 <script>
 // ==========================================
+// AÑO ESCOLAR (selector de consulta)
+// ==========================================
+let ANIO_SEL = '';
+const URL_BASE_CONSULTA = 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnfbYvKYwNyOje1Tje77PP8u9Gv_ksx_CEk0J8R1e1fHiTM/exec';
+const HOJAS_ANIO_CONSULTA = ['Incidencias', 'Tardanzas', 'Reuniones', 'Estudiantes'];
+
+// Lee la hoja Config: fija el año activo por defecto y llena el selector con los años disponibles.
+async function inicializarAnioConsulta() {
+try {
+const resp = await fetch(URL_BASE_CONSULTA + '?hoja=Config');
+const filas = await resp.json();
+let activo = '', disp = [];
+if (Array.isArray(filas) && filas.length > 0) {
+const cfg = filas[0];
+activo = String(cfg['añoActivo'] || cfg['anoActivo'] || '').trim();
+const dispStr = String(cfg['añosDisponibles'] || cfg['anosDisponibles'] || activo || '');
+disp = dispStr.split(',').map(s => s.trim()).filter(Boolean);
+}
+ANIO_SEL = activo || (disp[0] || '');
+const sel = document.getElementById('filtroAnioConsulta');
+if (sel) {
+const anios = (disp.length ? disp : (ANIO_SEL ? [ANIO_SEL] : [])).slice().sort().reverse();
+sel.innerHTML = anios.map(a => '<option value="' + a + '"' + (a === ANIO_SEL ? ' selected' : '') + '>' + a + (a === activo ? ' (actual)' : '') + '</option>').join('');
+}
+console.log('📅 Año de consulta:', ANIO_SEL, '| Disponibles:', disp);
+} catch (e) {
+console.error('No se pudo leer Config en consulta:', e);
+}
+}
+
+// El usuario de consulta cambia de año: recarga las estadísticas del año elegido.
+function cambiarAnioConsulta(anio) {
+ANIO_SEL = anio;
+console.log('📅 Año seleccionado:', ANIO_SEL);
+cargarEstadisticas();
+}
+
+// ==========================================
 // VERIFICAR AUTENTICACIÓN
 // ==========================================
 
@@ -577,7 +649,7 @@ document.getElementById('userCargo').textContent = '💼 ' + usuario.cargo;
 
 console.log('✅ Usuario autenticado:', usuario);
 
-cargarEstadisticas();
+inicializarAnioConsulta().then(cargarEstadisticas);
 });
 
 // ==========================================
@@ -595,6 +667,12 @@ urlEstudiantes: 'https://script.google.com/macros/s/AKfycbxzxH-mSiQnYZAADC7JLwnf
 
 async function cargarDatosDesdeGoogleSheets(url) {
 try {
+// Filtrar por el año seleccionado (solo en hojas selladas por año)
+const m = url.match(/[?&]hoja=([^&]+)/);
+const hoja = m ? decodeURIComponent(m[1]) : '';
+if (ANIO_SEL && HOJAS_ANIO_CONSULTA.includes(hoja) && !/[?&]anio=/.test(url)) {
+url += '&anio=' + encodeURIComponent(ANIO_SEL);
+}
 const response = await fetch(url);
 if (!response.ok) throw new Error('Error en la respuesta');
 return await response.json();
@@ -809,7 +887,9 @@ const paginas = {
 };
 
 if (paginas[modulo]) {
-window.location.href = paginas[modulo];
+let destino = paginas[modulo];
+if (ANIO_SEL) destino += '?anio=' + encodeURIComponent(ANIO_SEL);
+window.location.href = destino;
 } else {
 alert(`📊 Módulo de ${modulo}\n\n🔒 Vista de solo lectura activada.`);
 }
