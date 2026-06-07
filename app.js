@@ -4721,7 +4721,8 @@ function actualizarEstadisticasConductas() {
     generarHistorialMeses();
 }
 
-// Devuelve los meses del año escolar (ago–jun) a partir de "YYYY-YYYY", más recientes primero.
+// Devuelve los meses del año escolar divididos en dos períodos a partir de "YYYY-YYYY".
+// periodo1: Agosto–Diciembre (y1) · periodo2: Enero–Junio (y2)
 function mesesAnioEscolar(anioStr) {
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -4733,31 +4734,42 @@ function mesesAnioEscolar(anioStr) {
         if (hoy.getMonth() >= 7) { y1 = hoy.getFullYear(); y2 = y1 + 1; }
         else { y2 = hoy.getFullYear(); y1 = y2 - 1; }
     }
-    const lista = [];
-    for (let mi = 7; mi <= 11; mi++) lista.push({ nombre: meses[mi] + ' ' + y1, mes: mi, año: y1 }); // Ago–Dic
-    for (let mi = 0; mi <= 5; mi++) lista.push({ nombre: meses[mi] + ' ' + y2, mes: mi, año: y2 });   // Ene–Jun
-    return lista.reverse(); // más recientes primero
+    const periodo1 = [];
+    for (let mi = 7; mi <= 11; mi++) periodo1.push({ nombre: meses[mi] + ' ' + y1, mes: mi, año: y1 }); // Ago–Dic
+    const periodo2 = [];
+    for (let mi = 0; mi <= 5; mi++) periodo2.push({ nombre: meses[mi] + ' ' + y2, mes: mi, año: y2 });   // Ene–Jun
+    return { periodo1, periodo2 };
 }
 
-// Genera el historial con TODOS los meses del año escolar activo
+// Genera el historial con TODOS los meses del año escolar activo, en dos períodos
 function generarHistorialMeses() {
     const mesSelectorContainer = document.getElementById('mesSelectorContainer');
     if (!mesSelectorContainer) return;
 
-    const lista = mesesAnioEscolar(ANIO_ACTIVO);
+    const { periodo1, periodo2 } = mesesAnioEscolar(ANIO_ACTIVO);
+    const todos = periodo1.concat(periodo2);
 
-    // Por defecto: el mes actual si está dentro del año escolar; si no, el más reciente
+    // Por defecto: el mes actual si está dentro del año escolar; si no, el más reciente (junio)
     const ahora = new Date();
-    const sel = lista.find(x => x.mes === ahora.getMonth() && x.año === ahora.getFullYear()) || lista[0];
+    const sel = todos.find(x => x.mes === ahora.getMonth() && x.año === ahora.getFullYear()) || todos[todos.length - 1];
 
-    mesSelectorContainer.innerHTML = lista.map(m => `
-        <button class="btn ${(m.mes === sel.mes && m.año === sel.año) ? 'btn-primary' : 'btn-secondary'}"
+    const botones = (lista) => lista.map(m => `
+        <button class="btn ${(sel && m.mes === sel.mes && m.año === sel.año) ? 'btn-primary' : 'btn-secondary'}"
                 onclick="mostrarEstadisticasMes(${m.mes}, ${m.año})"
                 data-mes="${m.mes}" data-año="${m.año}"
                 style="padding:10px 20px;border-radius:8px;font-size:0.9em;font-weight:600;">
             ${m.nombre}
-        </button>
-    `).join('');
+        </button>`).join('');
+
+    mesSelectorContainer.innerHTML = `
+        <div style="width:100%;">
+            <div style="font-size:0.82em;font-weight:700;color:#1e3a5f;margin-bottom:8px;">1.er período · Agosto a Diciembre</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">${botones(periodo1)}</div>
+        </div>
+        <div style="width:100%;margin-top:16px;">
+            <div style="font-size:0.82em;font-weight:700;color:#1e3a5f;margin-bottom:8px;">2.º período · Enero a Junio</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">${botones(periodo2)}</div>
+        </div>`;
 
     if (sel) mostrarEstadisticasMes(sel.mes, sel.año);
 }
