@@ -288,6 +288,34 @@ header { flex-direction: column; text-align: center; }
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECCIÓN: HISTORIAL DE CONDUCTAS POR MES                 -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<hr style="margin:30px 0;border:none;border-top:1px solid #e5e7eb;">
+
+<h3 style="font-size:1.1em;font-weight:700;color:#1e3a5f;margin-bottom:14px;">📅 Historial de Conductas por Mes</h3>
+
+<div id="mesSelectorContainer" style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;"></div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:12px;">
+    <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);">
+        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Agresión Física</h5>
+        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialAgresionFisica">0</div>
+    </div>
+    <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Agresión Verbal</h5>
+        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialAgresionVerbal">0</div>
+    </div>
+    <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);">
+        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Bullying</h5>
+        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialBullying">0</div>
+    </div>
+    <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Cyber Bullying</h5>
+        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialCyberBullying">0</div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
 <!-- SECCIÓN: INCIDENCIAS POR CURSO                         -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <hr style="margin:30px 0;border:none;border-top:1px solid #e5e7eb;">
@@ -455,9 +483,58 @@ console.log(`✅ Cargado: ${incidencias.length} incidencias, ${tardanzas.length}
 window._incidencias = incidencias;
 window._estudiantes = estudiantes;
 renderGraficoCursos();
+generarHistorialMesesConsulta();
 }
 
 console.log('📊 Módulo de estadísticas (consulta) cargado');
+</script>
+
+<script>
+// ===== Historial de Conductas por Mes (todos los meses del año escolar) =====
+function mesesAnioEscolarConsulta(anioStr) {
+const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+let y1, y2;
+const m = String(anioStr || '').match(/(\d{4})\s*-\s*(\d{4})/);
+if (m) { y1 = parseInt(m[1], 10); y2 = parseInt(m[2], 10); }
+else { const h = new Date(); if (h.getMonth() >= 7) { y1 = h.getFullYear(); y2 = y1 + 1; } else { y2 = h.getFullYear(); y1 = y2 - 1; } }
+const lista = [];
+for (let mi = 7; mi <= 11; mi++) lista.push({ nombre: meses[mi] + ' ' + y1, mes: mi, año: y1 });
+for (let mi = 0; mi <= 5; mi++) lista.push({ nombre: meses[mi] + ' ' + y2, mes: mi, año: y2 });
+return lista.reverse(); // más recientes primero
+}
+
+function generarHistorialMesesConsulta() {
+const cont = document.getElementById('mesSelectorContainer');
+if (!cont) return;
+const anio = new URLSearchParams(location.search).get('anio') || '';
+const lista = mesesAnioEscolarConsulta(anio);
+const ahora = new Date();
+const sel = lista.find(x => x.mes === ahora.getMonth() && x.año === ahora.getFullYear()) || lista[0];
+cont.innerHTML = lista.map(m => {
+const activo = (m.mes === sel.mes && m.año === sel.año);
+return `<button onclick="mostrarEstadisticasMesConsulta(${m.mes}, ${m.año})" data-mes="${m.mes}" data-año="${m.año}" style="padding:8px 16px;border:none;border-radius:18px;font-size:0.85em;font-weight:700;cursor:pointer;color:#fff;background:${activo ? '#1976D2' : '#1f2937'};">${m.nombre}</button>`;
+}).join('');
+if (sel) mostrarEstadisticasMesConsulta(sel.mes, sel.año);
+}
+
+function mostrarEstadisticasMesConsulta(mes, año) {
+const inc = (window._incidencias || []).filter(i => {
+const f = new Date(i['Fecha y Hora'] || i.fecha || '');
+return f.getMonth() === mes && f.getFullYear() === año;
+});
+const tipo = i => (i['Tipo de Conducta'] || i['tipo de conducta'] || i['tipoConducta'] || '');
+const cuenta = t => inc.filter(i => tipo(i) === t).length;
+const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+set('historialAgresionFisica', cuenta('Agresión física'));
+set('historialAgresionVerbal', cuenta('Agresión verbal'));
+set('historialBullying', cuenta('Bullying'));
+set('historialCyberBullying', cuenta('Cyber bullying'));
+document.querySelectorAll('#mesSelectorContainer button').forEach(btn => {
+const bm = parseInt(btn.getAttribute('data-mes'));
+const ba = parseInt(btn.getAttribute('data-año'));
+btn.style.background = (bm === mes && ba === año) ? '#1976D2' : '#1f2937';
+});
+}
 </script>
 
 
