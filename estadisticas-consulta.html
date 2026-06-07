@@ -490,30 +490,44 @@ console.log('📊 Módulo de estadísticas (consulta) cargado');
 </script>
 
 <script>
-// ===== Historial de Conductas por Mes (todos los meses del año escolar) =====
+// ===== Historial de Conductas por Mes (dos períodos del año escolar) =====
 function mesesAnioEscolarConsulta(anioStr) {
 const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 let y1, y2;
 const m = String(anioStr || '').match(/(\d{4})\s*-\s*(\d{4})/);
 if (m) { y1 = parseInt(m[1], 10); y2 = parseInt(m[2], 10); }
 else { const h = new Date(); if (h.getMonth() >= 7) { y1 = h.getFullYear(); y2 = y1 + 1; } else { y2 = h.getFullYear(); y1 = y2 - 1; } }
-const lista = [];
-for (let mi = 7; mi <= 11; mi++) lista.push({ nombre: meses[mi] + ' ' + y1, mes: mi, año: y1 });
-for (let mi = 0; mi <= 5; mi++) lista.push({ nombre: meses[mi] + ' ' + y2, mes: mi, año: y2 });
-return lista.reverse(); // más recientes primero
+const periodo1 = [];
+for (let mi = 7; mi <= 11; mi++) periodo1.push({ nombre: meses[mi] + ' ' + y1, mes: mi, año: y1 }); // Ago–Dic
+const periodo2 = [];
+for (let mi = 0; mi <= 5; mi++) periodo2.push({ nombre: meses[mi] + ' ' + y2, mes: mi, año: y2 });   // Ene–Jun
+return { periodo1, periodo2 };
 }
 
 function generarHistorialMesesConsulta() {
 const cont = document.getElementById('mesSelectorContainer');
 if (!cont) return;
 const anio = new URLSearchParams(location.search).get('anio') || '';
-const lista = mesesAnioEscolarConsulta(anio);
+const { periodo1, periodo2 } = mesesAnioEscolarConsulta(anio);
+const todos = periodo1.concat(periodo2);
 const ahora = new Date();
-const sel = lista.find(x => x.mes === ahora.getMonth() && x.año === ahora.getFullYear()) || lista[0];
-cont.innerHTML = lista.map(m => {
-const activo = (m.mes === sel.mes && m.año === sel.año);
+const sel = todos.find(x => x.mes === ahora.getMonth() && x.año === ahora.getFullYear()) || todos[todos.length - 1];
+
+const botones = (lista) => lista.map(m => {
+const activo = (sel && m.mes === sel.mes && m.año === sel.año);
 return `<button onclick="mostrarEstadisticasMesConsulta(${m.mes}, ${m.año})" data-mes="${m.mes}" data-año="${m.año}" style="padding:8px 16px;border:none;border-radius:18px;font-size:0.85em;font-weight:700;cursor:pointer;color:#fff;background:${activo ? '#1976D2' : '#1f2937'};">${m.nombre}</button>`;
 }).join('');
+
+cont.innerHTML = `
+<div style="width:100%;">
+<div style="font-size:0.82em;font-weight:700;color:#1e3a5f;margin-bottom:8px;">1.er período · Agosto a Diciembre</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;">${botones(periodo1)}</div>
+</div>
+<div style="width:100%;margin-top:16px;">
+<div style="font-size:0.82em;font-weight:700;color:#1e3a5f;margin-bottom:8px;">2.º período · Enero a Junio</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;">${botones(periodo2)}</div>
+</div>`;
+
 if (sel) mostrarEstadisticasMesConsulta(sel.mes, sel.año);
 }
 
