@@ -4721,43 +4721,45 @@ function actualizarEstadisticasConductas() {
     generarHistorialMeses();
 }
 
-// Nueva función para generar el historial de meses
+// Devuelve los meses del año escolar (ago–jun) a partir de "YYYY-YYYY", más recientes primero.
+function mesesAnioEscolar(anioStr) {
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    let y1, y2;
+    const m = String(anioStr || '').match(/(\d{4})\s*-\s*(\d{4})/);
+    if (m) { y1 = parseInt(m[1], 10); y2 = parseInt(m[2], 10); }
+    else {
+        const hoy = new Date();
+        if (hoy.getMonth() >= 7) { y1 = hoy.getFullYear(); y2 = y1 + 1; }
+        else { y2 = hoy.getFullYear(); y1 = y2 - 1; }
+    }
+    const lista = [];
+    for (let mi = 7; mi <= 11; mi++) lista.push({ nombre: meses[mi] + ' ' + y1, mes: mi, año: y1 }); // Ago–Dic
+    for (let mi = 0; mi <= 5; mi++) lista.push({ nombre: meses[mi] + ' ' + y2, mes: mi, año: y2 });   // Ene–Jun
+    return lista.reverse(); // más recientes primero
+}
+
+// Genera el historial con TODOS los meses del año escolar activo
 function generarHistorialMeses() {
     const mesSelectorContainer = document.getElementById('mesSelectorContainer');
     if (!mesSelectorContainer) return;
-    
+
+    const lista = mesesAnioEscolar(ANIO_ACTIVO);
+
+    // Por defecto: el mes actual si está dentro del año escolar; si no, el más reciente
     const ahora = new Date();
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    
-    // Generar últimos 6 meses
-    const botonesMeses = [];
-    for (let i = 0; i < 6; i++) {
-        const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
-        const mes = fecha.getMonth();
-        const año = fecha.getFullYear();
-        const nombreMes = `${meses[mes]} ${año}`;
-        
-        botonesMeses.push({
-            nombre: nombreMes,
-            mes: mes,
-            año: año,
-            esActual: i === 0
-        });
-    }
-    
-    // Crear botones
-    mesSelectorContainer.innerHTML = botonesMeses.map(m => `
-        <button class="btn ${m.esActual ? 'btn-primary' : 'btn-secondary'}" 
+    const sel = lista.find(x => x.mes === ahora.getMonth() && x.año === ahora.getFullYear()) || lista[0];
+
+    mesSelectorContainer.innerHTML = lista.map(m => `
+        <button class="btn ${(m.mes === sel.mes && m.año === sel.año) ? 'btn-primary' : 'btn-secondary'}"
                 onclick="mostrarEstadisticasMes(${m.mes}, ${m.año})"
                 data-mes="${m.mes}" data-año="${m.año}"
                 style="padding:10px 20px;border-radius:8px;font-size:0.9em;font-weight:600;">
             ${m.nombre}
         </button>
     `).join('');
-    
-    // Mostrar estadísticas del mes actual por defecto
-    mostrarEstadisticasMes(ahora.getMonth(), ahora.getFullYear());
+
+    if (sel) mostrarEstadisticasMes(sel.mes, sel.año);
 }
 
 // Función para mostrar estadísticas de un mes específico
