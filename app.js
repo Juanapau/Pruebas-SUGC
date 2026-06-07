@@ -3828,9 +3828,6 @@ function crearModalConfiguracion() {
                 <button class="config-tab active" onclick="cambiarTabConfig('general')">
                     🎨 Apariencia
                 </button>
-                <button class="config-tab" onclick="cambiarTabConfig('conexion')">
-                    🔗 Conexión
-                </button>
                 <button class="config-tab" onclick="cambiarTabConfig('sistema')">
                     ℹ️ Sistema
                 </button>
@@ -3895,127 +3892,6 @@ function crearModalConfiguracion() {
                             <span class="slider"></span>
                         </label>
                     </div>
-                </div>
-            </div>
-            
-            <!-- TAB: CONEXIÓN -->
-            <div id="tabConexion" class="config-tab-content">
-                <div class="config-section">
-                    <h3>🔗 URLs de Google Sheets</h3>
-                    
-                    <!-- NOTA INFORMATIVA -->
-                    <div style="background:#dbeafe;border-left:4px solid #3b82f6;padding:15px 20px;margin-bottom:20px;border-radius:8px;">
-                        <div style="display:flex;align-items:start;gap:12px;">
-                            <div style="font-size:1.3em;color:#3b82f6;">ℹ️</div>
-                            <div style="flex:1;">
-                                <strong style="color:#1e40af;display:block;margin-bottom:5px;">URLs Pre-configuradas</strong>
-                                <p style="color:#1e3a8a;font-size:0.9em;margin:0;line-height:1.6;">
-                                    Las URLs ya están configuradas en el código. El sistema funciona automáticamente en cualquier dispositivo sin necesidad de configuración adicional.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <p style="color:#666;font-size:0.9em;margin-bottom:20px;">
-                        Puedes ver o actualizar las URLs de tus hojas de Google Sheets
-                    </p>
-                    
-                    <form id="formConfig" onsubmit="guardarConfig(event)">
-                        <div class="url-grid">
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">📋</span>
-                                    <span class="label-text">Incidencias</span>
-                                </label>
-                                <input type="url" id="urlInc" value="${CONFIG.urlIncidencias || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">⏰</span>
-                                    <span class="label-text">Tardanzas</span>
-                                </label>
-                                <input type="url" id="urlTard" value="${CONFIG.urlTardanzas || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">👥</span>
-                                    <span class="label-text">Estudiantes</span>
-                                </label>
-                                <input type="url" id="urlEst" value="${CONFIG.urlEstudiantes || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">📞</span>
-                                    <span class="label-text">Contactos</span>
-                                </label>
-                                <input type="url" id="urlCont" value="${CONFIG.urlContactos || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">👨‍👩‍👧</span>
-                                    <span class="label-text">Reuniones</span>
-                                </label>
-                                <input type="url" id="urlReun" value="${CONFIG.urlReuniones || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">📝</span>
-                                    <span class="label-text">Notas Rápidas</span>
-                                </label>
-                                <input type="url" id="urlNotas" value="${CONFIG.urlNotasRapidas || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">🔔</span>
-                                    <span class="label-text">Notificaciones</span>
-                                </label>
-                                <input type="url" id="urlNotificaciones" value="${CONFIG.urlNotificaciones || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">👨‍🏫</span>
-                                    <span class="label-text">Maestros</span>
-                                </label>
-                                <input type="url" id="urlMaestros" value="${CONFIG.urlMaestros || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                            
-                            <div class="url-input-group">
-                                <label>
-                                    <span class="label-icon">📅</span>
-                                    <span class="label-text">Horarios Maestros</span>
-                                </label>
-                                <input type="url" id="urlHorarios" value="${CONFIG.urlHorarios || ''}" 
-                                       placeholder="https://script.google.com/macros/s/...">
-                            </div>
-                        </div>
-                        
-                        <div style="margin-top:30px;display:flex;gap:10px;flex-wrap:wrap;">
-                            <button type="submit" class="btn btn-success" style="flex:1;min-width:200px;">
-                                💾 Guardar Configuración
-                            </button>
-                            <button type="button" class="btn" onclick="restaurarURLsPredeterminadas()" style="background:#f59e0b;color:white;flex:1;min-width:200px;">
-                                🔄 Restaurar URLs del Código
-                            </button>
-                            <button type="button" class="btn" onclick="probarConexiones()" style="background:#3b82f6;color:white;min-width:180px;">
-                                🔍 Probar Conexiones
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </div>
             
