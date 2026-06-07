@@ -264,6 +264,10 @@ header { flex-direction: column; text-align: center; }
 <input type="radio" name="filtroTardanzas" value="mas3" onchange="aplicarFiltro()">
 <span>🚨 Más de 3 tardanzas</span>
 </label>
+<label>
+<input type="radio" name="filtroTardanzas" value="mas10" onchange="aplicarFiltro()">
+<span>🔴 Más de 12 tardanzas acumuladas</span>
+</label>
 </div>
 </div>
 
@@ -458,7 +462,19 @@ return `<tr class="${claseFila}">
 <td>${t['Mes'] || 'N/A'}</td>
 <td><strong>${totalMes}</strong></td>
 </tr>`;
-}).join('');
+}).join('') + filaTotalAcumulado();
+}
+
+// Barra azul con la sumatoria total (solo cuando se busca un estudiante específico)
+function filaTotalAcumulado() {
+const buscarVal = (document.getElementById('buscarEstudiante')?.value || '').trim();
+if (!buscarVal || tardanzasFiltradas.length === 0) return '';
+const totalAcumulado = tardanzasFiltradas.reduce((s, t) => s + (parseInt(t['Total Mes']) || 0), 0);
+const nombre = tardanzasFiltradas[0]['Nombre Estudiante'] || '';
+return `<tr style="background-color:#1e3a5f;color:white;">
+<td colspan="4" style="text-align:right;font-weight:700;padding:10px 14px;font-size:0.95em;">📊 Total acumulado de tardanzas — ${nombre}</td>
+<td style="font-weight:700;font-size:1.1em;padding:10px 14px;">${totalAcumulado}</td>
+</tr>`;
 }
 
 function aplicarFiltro() {
@@ -518,6 +534,32 @@ totalMes: 0
 }
 grupos[clave].tardanzas.push(t);
 });
+
+// Filtro "Más de 12 tardanzas acumuladas": vista consolidada (una fila por estudiante)
+if (filtro === 'mas10') {
+const acumulado = {};
+Object.values(grupos).forEach(g => {
+if (!acumulado[g.estudiante]) acumulado[g.estudiante] = { estudiante: g.estudiante, curso: g.curso, total: 0 };
+acumulado[g.estudiante].total += g.tardanzas.length;
+});
+const conMas12 = Object.values(acumulado).filter(e => e.total > 12).sort((a, b) => b.total - a.total);
+const tbodyM = document.getElementById('bodyTardanzas');
+if (conMas12.length === 0) {
+tbodyM.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#999;">No hay estudiantes con más de 12 tardanzas acumuladas</td></tr>';
+return;
+}
+tbodyM.innerHTML = conMas12.map((e, idx) => {
+const esSexto = ['6toA','6toB','6toC'].includes(e.curso);
+return `<tr class="fila-peligro">
+<td style="color:#999;font-size:0.85em;">${idx + 1}</td>
+<td><strong>🔴 ${e.estudiante}</strong>${esSexto ? ' <span style="background:#6b7280;color:white;padding:2px 8px;border-radius:10px;font-size:0.78em;font-weight:600;">No aplica</span>' : ''}</td>
+<td>${e.curso || ''}</td>
+<td><span style="background:#dc2626;color:white;padding:3px 10px;border-radius:12px;font-weight:700;font-size:0.95em;">${e.total} tardanzas acumuladas</span></td>
+<td><span style="color:#999;font-size:0.85em;">-</span></td>
+</tr>`;
+}).join('');
+return;
+}
 
 // Calcular totales y filtrar según el criterio
 tardanzasFiltradas = [];
