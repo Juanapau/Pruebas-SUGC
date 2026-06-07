@@ -562,7 +562,8 @@ console.log('🤝 Módulo de reuniones (consulta) cargado');
 (function(){
   var a = new URLSearchParams(location.search).get('anio');
   var btn = document.querySelector('.btn-back');
-  if (btn) btn.setAttribute('href', a ? ('admin.html?anio=' + encodeURIComponent(a)) : 'consulta.html');
+  var rolUGC = ''; try { rolUGC = (JSON.parse(localStorage.getItem('usuarioUGC') || '{}').rol) || ''; } catch(e) {}
+  if (btn) btn.setAttribute('href', (rolUGC === 'administrador' && a) ? ('admin.html?anio=' + encodeURIComponent(a)) : 'consulta.html');
   if(!a) return;
   var b=document.createElement('div');
   b.textContent='🔒 Consultando el año '+a+' — solo lectura';
