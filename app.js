@@ -4566,26 +4566,6 @@ function crearModalReportes() {
             </div>
             
             <hr style="margin:40px 0;">
-            <h3>Reporte por Curso</h3>
-            <div class="form-group">
-                <label>Seleccione Curso</label>
-                <select id="cursoReporte">
-                    <option value="">Todos</option>
-                    ${CURSOS.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
-            </div>
-            <button class="btn btn-primary" onclick="generarReporte()">📊 Generar Reporte por Curso</button>
-            
-            <hr style="margin:40px 0;">
-            <h3>Reporte por Estudiante</h3>
-            <div class="form-group" style="position:relative;">
-                <label>Buscar Estudiante</label>
-                <input type="text" id="estudianteReporte" data-sugerencias="sugerenciasReporte" placeholder="Escriba el nombre del estudiante..." style="width:100%;">
-                <div id="sugerenciasReporte" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ccc;max-height:200px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
-            </div>
-            <button class="btn btn-primary" onclick="generarReporteEstudiante()">📊 Generar Reporte Individual</button>
-            
-            <hr style="margin:40px 0;">
             
             <!-- HISTORIAL DE CONDUCTAS POR MES -->
             <div style="margin-top:40px;">
@@ -4616,8 +4596,6 @@ function crearModalReportes() {
                     </div>
                 </div>
             </div>
-            
-            <div id="contenidoReporte" style="margin-top:30px;"></div>
             
             <hr style="margin:40px 0;">
             
@@ -4702,6 +4680,28 @@ function crearModalReportes() {
             <p style="font-size:0.78em;color:#9ca3af;margin-top:8px;">
                 * El <strong>Índice de Riesgo</strong> (0–100%) combina tres factores con igual peso: <strong>Gravedad</strong> (qué tan graves son las faltas en promedio), <strong>Cobertura</strong> (qué % del curso tiene incidencias) y <strong>Reincidencia</strong> (faltas promedio por alumno afectado). El curso con mayor riesgo marca 100% y los demás se escalan proporcionalmente.
             </p>
+            
+            <hr style="margin:40px 0;">
+            <h3>Reporte por Curso</h3>
+            <div class="form-group">
+                <label>Seleccione Curso</label>
+                <select id="cursoReporte">
+                    <option value="">Todos</option>
+                    ${CURSOS.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="generarReporte()">📊 Generar Reporte por Curso</button>
+            
+            <hr style="margin:40px 0;">
+            <h3>Reporte por Estudiante</h3>
+            <div class="form-group" style="position:relative;">
+                <label>Buscar Estudiante</label>
+                <input type="text" id="estudianteReporte" data-sugerencias="sugerenciasReporte" placeholder="Escriba el nombre del estudiante..." style="width:100%;">
+                <div id="sugerenciasReporte" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ccc;max-height:200px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
+            </div>
+            <button class="btn btn-primary" onclick="generarReporteEstudiante()">📊 Generar Reporte Individual</button>
+            
+            <div id="contenidoReporte" style="margin-top:30px;"></div>
         </div>
     </div>
 </div>`;
