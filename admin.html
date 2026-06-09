@@ -253,6 +253,14 @@
         body.dark-mode [style*="color:#065f46"] { color: #6ee7b7 !important; }  /* reloj */
         body.dark-mode [style*="color:#555"]    { color: #cbd5e1 !important; }  /* "Selecciona un curso:" */
 
+        /* Tarjetas .stat-card sin estilo (p. ej. salida de reportes) en oscuro */
+        body.dark-mode .stat-card {
+            background: #1e293b;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        body.dark-mode .stat-card h4 { color: #94a3b8; }
+        body.dark-mode .stat-card .number { color: #4a9eff; }
+
         /* VISTA COMPACTA */
         body.vista-compacta .card {
             padding: 15px;
