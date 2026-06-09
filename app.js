@@ -3118,21 +3118,21 @@ function crearModalReuniones() {
             
             <!-- Estadísticas -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <h4>Total de Reuniones</h4>
-                    <div class="number" id="totalReuniones">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#eff6ff,#dbeafe);color:white;border-radius:12px;">
+                    <h4 style="color:#1e3a5f;margin:0 0 8px;">Total de Reuniones</h4>
+                    <div class="number" id="totalReuniones" style="color:#1e3a5f;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Este Mes</h4>
-                    <div class="number" id="reunionesMes">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:white;border-radius:12px;">
+                    <h4 style="color:#059669;margin:0 0 8px;">Este Mes</h4>
+                    <div class="number" id="reunionesMes" style="color:#059669;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Acuerdos Activos</h4>
-                    <div class="number" id="acuerdosActivos">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#faf5ff,#ede9fe);color:white;border-radius:12px;">
+                    <h4 style="color:#7c3aed;margin:0 0 8px;">Acuerdos Activos</h4>
+                    <div class="number" id="acuerdosActivos" style="color:#7c3aed;font-size:2em;font-weight:700;">0</div>
                 </div>
-                <div class="stat-card">
-                    <h4>Seguimientos Pendientes</h4>
-                    <div class="number" id="seguimientosPendientes">0</div>
+                <div class="stat-card" style="background:linear-gradient(135deg,#fffbeb,#fef3c7);color:white;border-radius:12px;">
+                    <h4 style="color:#d97706;margin:0 0 8px;">Seguimientos Pendientes</h4>
+                    <div class="number" id="seguimientosPendientes" style="color:#d97706;font-size:2em;font-weight:700;">0</div>
                 </div>
             </div>
             
