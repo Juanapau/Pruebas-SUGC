@@ -263,7 +263,22 @@
 
         /* Resumen General del historial completo del estudiante: fondo oscuro uniforme,
            se conserva el borde de color de cada tarjeta */
-        body.dark-mode .resumen-card { background: #1e293b !important; }
+        /* Resumen General del historial: fondo oscuro uniforme + efecto 3D elevado */
+        .resumen-card {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .resumen-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.2);
+        }
+        body.dark-mode .resumen-card {
+            background: #2b3a52 !important;
+            box-shadow: 0 10px 22px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.10);
+        }
+        body.dark-mode .resumen-card:hover {
+            box-shadow: 0 16px 32px rgba(0,0,0,0.72), inset 0 1px 0 rgba(255,255,255,0.13);
+        }
         body.dark-mode .resumen-card > div:first-child { color: #f1f5f9 !important; }
 
         /* VISTA COMPACTA */
