@@ -2111,7 +2111,7 @@ function enviarWhatsAppTardanzas(estudiante, total, mes) {
             '<div style="margin-bottom:20px;">' +
                 botonesHTML +
             '</div>' +
-            '<button class="btn" onclick="this.closest(\'.modal\').remove()" style="width:100%;padding:12px;background:#6c757d;color:white;border:none;border-radius:8px;cursor:pointer;font-size:1em;">Cancelar</button>' +
+            '<button class="btn" onclick="this.closest(\'.modal\').remove()" style="width:100%;padding:12px;background:#000000;color:white;border:none;border-radius:8px;cursor:pointer;font-size:1em;">Cancelar</button>' +
         '</div>';
     
     document.body.appendChild(modal);
