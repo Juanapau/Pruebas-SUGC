@@ -135,7 +135,15 @@
         }
 
         body.dark-mode tr:hover {
-            background: #334155;
+            background: #243246;
+        }
+        /* Filas clicables (onclick): hover/active sutil en oscuro, nunca claro */
+        body.dark-mode table tr[onclick]:hover {
+            background: #243246 !important;
+            box-shadow: none;
+        }
+        body.dark-mode table tr[onclick]:active {
+            background: #2b3a51 !important;
         }
 
         body.dark-mode .btn {
