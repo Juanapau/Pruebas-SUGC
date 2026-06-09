@@ -1112,7 +1112,7 @@ function actualizarContadoresPestanas() {
     // Actualizar badges
     const badgeHoy = document.getElementById('countHoy');
     const badgeProximas = document.getElementById('countProximas');
-    const badgeTodas = document.getElementById('countTodas');
+    const badgeTodas = document.getElementById('countTodasNotas');
     
     if (badgeHoy) badgeHoy.textContent = countHoy;
     if (badgeProximas) badgeProximas.textContent = countProximas;
