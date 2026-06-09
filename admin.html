@@ -323,11 +323,11 @@
         /* Toast de notificación emergente */
         body.dark-mode .notificacion { background: #1e293b; color: #e2e8f0; }
 
-        /* Nota VENCIDA (panel Notas): tenía gradiente claro con !important */
+        /* Nota VENCIDA (panel Notas): mismo fondo que las demás, solo conserva su borde rojo */
         body.dark-mode .nota-vencida {
-            background: linear-gradient(135deg, #2a1518 0%, #0f172a 100%) !important;
+            background: #0f172a !important;
         }
-        body.dark-mode .nota-vencida .nota-header-item { border-bottom-color: #5a2a2a; }
+        body.dark-mode .nota-vencida .nota-header-item { border-bottom-color: #334155; }
         /* "Nota Importante" del Régimen Disciplinario en oscuro */
         body.dark-mode .falta-nota {
             background: #2e2a18;
@@ -2993,7 +2993,7 @@ header img {
                     📅 Próximas <span class="tab-count" id="countProximas">0</span>
                 </button>
                 <button class="nota-tab" onclick="cambiarTabNotas('todas')" data-tab="todas">
-                    📋 Todas <span class="tab-count" id="countTodas">0</span>
+                    📋 Todas <span class="tab-count" id="countTodasNotas">0</span>
                 </button>
             </div>
 
