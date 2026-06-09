@@ -923,7 +923,7 @@ function editarIncidencia(indice) {
     
     // Resaltar el formulario
     const form = document.getElementById('formIncidencia');
-    form.style.background = '#fff3cd';
+    form.style.background = '';
     setTimeout(() => {
         form.style.background = '';
     }, 2000);
@@ -2498,7 +2498,7 @@ function editarContacto(indice) {
     
     // Resaltar el formulario
     const form = document.getElementById('formContacto');
-    form.style.background = '#fff3cd';
+    form.style.background = '';
     setTimeout(() => {
         form.style.background = '';
     }, 2000);
@@ -7267,7 +7267,7 @@ function editarReunion(indice) {
     
     // Resaltar el formulario
     const form = document.getElementById('formReunion');
-    form.style.background = '#fff3cd';
+    form.style.background = '';
     setTimeout(() => {
         form.style.background = '';
     }, 2000);
