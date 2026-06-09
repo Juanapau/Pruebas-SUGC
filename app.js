@@ -5384,34 +5384,34 @@ function abrirHistorialEstudiante(nombreEstudiante) {
                 📊 Resumen General
             </h3>
             <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:15px;margin-bottom:30px;">
-                <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:20px;border-radius:8px;">
+                <div class="resumen-card" style="background:#fef2f2;border-left:4px solid #dc2626;padding:20px;border-radius:8px;">
                     <div style="font-size:2em;font-weight:bold;color:#333;">${incidencias.length}</div>
                     <div style="color:#666;font-size:0.9em;margin-top:5px;">Incidencias Totales</div>
                 </div>
-                <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:20px;border-radius:8px;">
+                <div class="resumen-card" style="background:#fffbeb;border-left:4px solid #f59e0b;padding:20px;border-radius:8px;">
                     <div style="font-size:2em;font-weight:bold;color:#333;">${tardanzasTotales}</div>
                     <div style="color:#666;font-size:0.9em;margin-top:5px;">Tardanzas Totales</div>
                 </div>
-                <div style="background:#eff6ff;border-left:4px solid #3b82f6;padding:20px;border-radius:8px;">
+                <div class="resumen-card" style="background:#eff6ff;border-left:4px solid #3b82f6;padding:20px;border-radius:8px;">
                     <div style="font-size:2em;font-weight:bold;color:#333;">${reuniones.length}</div>
                     <div style="color:#666;font-size:0.9em;margin-top:5px;">Reuniones con Padres</div>
                 </div>
-                <div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:20px;border-radius:8px;">
+                <div class="resumen-card" style="background:#f0fdf4;border-left:4px solid #22c55e;padding:20px;border-radius:8px;">
                     <div style="font-size:2em;font-weight:bold;color:#333;">${incidenciasLeves}</div>
                     <div style="color:#666;font-size:0.9em;margin-top:5px;">Faltas Leves</div>
                 </div>
-                <div style="background:#fff7ed;border-left:4px solid #f97316;padding:20px;border-radius:8px;">
+                <div class="resumen-card" style="background:#fff7ed;border-left:4px solid #f97316;padding:20px;border-radius:8px;">
                     <div style="font-size:2em;font-weight:bold;color:#333;">${incidenciasGraves}</div>
                     <div style="color:#666;font-size:0.9em;margin-top:5px;">Faltas Graves</div>
                 </div>
-                <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:20px;border-radius:8px;">
+                <div class="resumen-card" style="background:#fef2f2;border-left:4px solid #dc2626;padding:20px;border-radius:8px;">
                     <div style="font-size:2em;font-weight:bold;color:#333;">${incidenciasMuyGraves}</div>
                     <div style="color:#666;font-size:0.9em;margin-top:5px;">Faltas Muy Graves</div>
                 </div>
             </div>
             
             <!-- ESTADO DEL ESTUDIANTE -->
-            <div style="background:${estadoColor === '#dc2626' ? '#fef2f2' : estadoColor === '#f59e0b' ? '#fffbeb' : '#f0fdf4'};border-left:4px solid ${estadoColor};padding:20px;border-radius:8px;margin-bottom:30px;text-align:center;">
+            <div class="resumen-card" style="background:${estadoColor === '#dc2626' ? '#fef2f2' : estadoColor === '#f59e0b' ? '#fffbeb' : '#f0fdf4'};border-left:4px solid ${estadoColor};padding:20px;border-radius:8px;margin-bottom:30px;text-align:center;">
                 <div style="font-size:2.5em;font-weight:bold;color:#333;">${estadoIcono}</div>
                 <div style="color:#666;font-size:1.1em;margin-top:5px;font-weight:600;">${estadoTexto}</div>
             </div>
