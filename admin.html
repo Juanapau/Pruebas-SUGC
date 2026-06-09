@@ -237,6 +237,22 @@
             border-color: #4a9eff;
         }
 
+        /* Consulta de Horarios (Maestros) en oscuro */
+        body.dark-mode [style*="background:#f0fdf4"] {   /* barra EN VIVO */
+            background: #0e2a1e !important;
+            border-color: #1f4a36 !important;
+        }
+        body.dark-mode [style*="background:#f3f4f6"] {   /* "Fuera del horario" */
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode [style*="background:#dcfce7"] {   /* insignia de período */
+            background: #14532d !important;
+            color: #bbf7d0 !important;
+        }
+        body.dark-mode [style*="color:#065f46"] { color: #6ee7b7 !important; }  /* reloj */
+        body.dark-mode [style*="color:#555"]    { color: #cbd5e1 !important; }  /* "Selecciona un curso:" */
+
         /* VISTA COMPACTA */
         body.vista-compacta .card {
             padding: 15px;
