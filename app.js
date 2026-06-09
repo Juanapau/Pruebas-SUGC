@@ -765,8 +765,8 @@ function filtrarEstudiantesIncidencia() {
         const cursoEscapado = curso.replace(/'/g, "\\'");
         return `<div onclick="seleccionarEstudianteIncidencia('${nombreEscapado}', '${cursoEscapado}')" 
                      style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;"
-                     onmouseover="this.style.background='#f0f0f0'" 
-                     onmouseout="this.style.background='white'">
+                     class="sugerencia-item" 
+                     >
                     <strong>${nombre}</strong><br>
                     <small style="color:#666;">${curso}</small>
                 </div>`;
@@ -792,7 +792,7 @@ function seleccionarEstudianteIncidencia(nombre, curso) {
     cursoSelect.value = curso;
     
     // Indicador visual
-    cursoSelect.style.background = '#e8f5e9';
+    cursoSelect.style.background = '';
     setTimeout(() => {
         cursoSelect.style.background = '';
     }, 1000);
@@ -1257,7 +1257,7 @@ function autocompletarCursoTardanza() {
             cursoSelect.value = curso;
             
             // Cambiar color del select para indicar que se autocompletó
-            cursoSelect.style.background = '#e8f5e9';
+            cursoSelect.style.background = '';
             setTimeout(() => {
                 cursoSelect.style.background = '';
             }, 1000);
@@ -1273,7 +1273,7 @@ function autocompletarCursoTardanza() {
             const curso = estudianteParcial['Curso'] || estudianteParcial.curso || '';
             if (curso) {
                 cursoSelect.value = curso;
-                cursoSelect.style.background = '#fff3cd'; // Color amarillo para indicar coincidencia parcial
+                cursoSelect.style.background = ''; // Color amarillo para indicar coincidencia parcial
                 setTimeout(() => {
                     cursoSelect.style.background = '';
                 }, 1000);
@@ -1316,8 +1316,8 @@ function filtrarEstudiantesTardanza() {
         const cursoEscapado = curso.replace(/'/g, "\\'");
         return `<div onclick="seleccionarEstudianteTardanza('${nombreEscapado}', '${cursoEscapado}')" 
                      style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;"
-                     onmouseover="this.style.background='#f0f0f0'" 
-                     onmouseout="this.style.background='white'">
+                     class="sugerencia-item" 
+                     >
                     <strong>${nombre}</strong><br>
                     <small style="color:#666;">${curso}</small>
                 </div>`;
@@ -1343,7 +1343,7 @@ function seleccionarEstudianteTardanza(nombre, curso) {
     cursoSelect.value = curso;
     
     // Indicador visual
-    cursoSelect.style.background = '#e8f5e9';
+    cursoSelect.style.background = '';
     setTimeout(() => {
         cursoSelect.style.background = '';
     }, 1000);
@@ -1387,8 +1387,8 @@ function crearAutocompletadoBusqueda(inputId, sugerenciasId, callbackSeleccion) 
             const nombreEscapado = nombre.replace(/'/g, "\\'");
             return `<div onclick="seleccionarEstudianteBusqueda('${inputId}', '${sugerenciasId}', '${nombreEscapado}', '${callbackSeleccion || ''}')" 
                          style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;"
-                         onmouseover="this.style.background='#f0f0f0'" 
-                         onmouseout="this.style.background='white'">
+                         class="sugerencia-item" 
+                         >
                         <strong>${nombre}</strong><br>
                         <small style="color:#666;">${curso}</small>
                     </div>`;
@@ -3547,8 +3547,8 @@ function filtrarMaestros() {
         const telefono = m['Teléfono Docente'] || '';
         return `
             <div style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;" 
-                 onmouseover="this.style.background='#f0f0f0'" 
-                 onmouseout="this.style.background='white'"
+                 class="sugerencia-item" 
+                 
                  onclick="seleccionarMaestro('${nombre.replace(/'/g, "\\'")}', '${telefono}')">
                 <strong>${nombre}</strong><br>
                 <small style="color:#666;">${telefono}</small>
@@ -3598,8 +3598,8 @@ function filtrarEstudiantesMaestros() {
         const curso = e.Curso || e.curso || '';
         return `
             <div style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;" 
-                 onmouseover="this.style.background='#f0f0f0'" 
-                 onmouseout="this.style.background='white'"
+                 class="sugerencia-item" 
+                 
                  onclick="seleccionarEstudianteMaestro('${nombre.replace(/'/g, "\\'")}')">
                 <strong>${nombre}</strong>
                 ${curso ? `<br><small style="color:#666;">${curso}</small>` : ''}
@@ -7011,8 +7011,8 @@ function filtrarEstudiantesReunion() {
         const cursoEscapado = curso.replace(/'/g, "\\'");
         return `<div onclick="seleccionarEstudianteReunion('${nombreEscapado}', '${cursoEscapado}')" 
                      style="padding:10px;cursor:pointer;border-bottom:1px solid #eee;"
-                     onmouseover="this.style.background='#f0f0f0'" 
-                     onmouseout="this.style.background='white'">
+                     class="sugerencia-item" 
+                     >
                     <strong>${nombre}</strong><br>
                     <small style="color:#666;">${curso}</small>
                 </div>`;
@@ -7036,7 +7036,7 @@ function seleccionarEstudianteReunion(nombre, curso) {
     input.value = nombre;
     cursoSelect.value = curso;
     
-    cursoSelect.style.background = '#e8f5e9';
+    cursoSelect.style.background = '';
     setTimeout(() => {
         cursoSelect.style.background = '';
     }, 1000);
