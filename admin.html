@@ -231,6 +231,13 @@
         /* Autocompletado: hover en oscuro igual que las tablas (el claro ya está definido) */
         body.dark-mode .sugerencia-item:hover { background: #243246; }
 
+        /* Contenedores de listas de sugerencias (su display lo togglea el JS,
+           por eso se apuntan por prefijo de id en vez de por estilo en línea) */
+        body.dark-mode [id^="sugerencias"] {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+
         /* Cuadro "Importar desde Excel": hover oscuro (no claro) */
         body.dark-mode .file-upload-area:hover {
             background: #243246;
@@ -315,6 +322,19 @@
         }
         /* Toast de notificación emergente */
         body.dark-mode .notificacion { background: #1e293b; color: #e2e8f0; }
+
+        /* Nota VENCIDA (panel Notas): tenía gradiente claro con !important */
+        body.dark-mode .nota-vencida {
+            background: linear-gradient(135deg, #2a1518 0%, #0f172a 100%) !important;
+        }
+        body.dark-mode .nota-vencida .nota-header-item { border-bottom-color: #5a2a2a; }
+        /* "Nota Importante" del Régimen Disciplinario en oscuro */
+        body.dark-mode .falta-nota {
+            background: #2e2a18;
+            border-left-color: #d97706;
+            color: #e7e3d4;
+        }
+        body.dark-mode .falta-nota strong { color: #fde68a; }
 
         /* VISTA COMPACTA */
         body.vista-compacta .card {
