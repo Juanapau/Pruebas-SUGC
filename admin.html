@@ -264,21 +264,9 @@
         /* Resumen General del historial completo del estudiante: fondo oscuro uniforme,
            se conserva el borde de color de cada tarjeta */
         /* Resumen General del historial: fondo oscuro uniforme + efecto 3D elevado */
-        .resumen-card {
-            box-shadow: 0 2px 6px rgba(0,0,0,0.10);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .resumen-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(0,0,0,0.14);
-        }
-        body.dark-mode .resumen-card {
-            background: #243246 !important;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.05);
-        }
-        body.dark-mode .resumen-card:hover {
-            box-shadow: 0 7px 16px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.06);
-        }
+        /* Resumen General del historial: mismo fondo que los cuadros de Información
+           de Contacto (#0f172a), sin efecto, solo con su borde de color a la izquierda */
+        body.dark-mode .resumen-card { background: #0f172a !important; }
         body.dark-mode .resumen-card > div:first-child { color: #f1f5f9 !important; }
 
         /* VISTA COMPACTA */
