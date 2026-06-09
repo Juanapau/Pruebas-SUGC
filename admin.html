@@ -204,9 +204,13 @@
         body.dark-mode [style*="solid #ccc"],
         body.dark-mode [style*="solid #d1d5db"],
         body.dark-mode [style*="solid #e5e7eb"],
+        body.dark-mode [style*="solid #eee"],
         body.dark-mode [style*="solid #ddd"] {
             border-color: #334155 !important;
         }
+
+        /* Autocompletado: hover en oscuro igual que las tablas (el claro ya está definido) */
+        body.dark-mode .sugerencia-item:hover { background: #243246; }
 
         /* VISTA COMPACTA */
         body.vista-compacta .card {
