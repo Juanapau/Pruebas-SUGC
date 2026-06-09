@@ -4599,20 +4599,20 @@ function crearModalReportes() {
                 <!-- Grid compacto de estadísticas del mes seleccionado -->
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:12px;">
                     <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);">
-                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Agresión Física</h5>
-                        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialAgresionFisica">0</div>
+                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#4b5563;font-weight:600;">Agresión Física</h5>
+                        <div style="font-size:1.8em;font-weight:bold;color:#1f2937;" id="historialAgresionFisica">0</div>
                     </div>
                     <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
-                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Agresión Verbal</h5>
-                        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialAgresionVerbal">0</div>
+                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#4b5563;font-weight:600;">Agresión Verbal</h5>
+                        <div style="font-size:1.8em;font-weight:bold;color:#1f2937;" id="historialAgresionVerbal">0</div>
                     </div>
                     <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);">
-                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Bullying</h5>
-                        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialBullying">0</div>
+                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#4b5563;font-weight:600;">Bullying</h5>
+                        <div style="font-size:1.8em;font-weight:bold;color:#1f2937;" id="historialBullying">0</div>
                     </div>
                     <div style="padding:15px;border-radius:8px;text-align:center;border:2px solid #e0e0e0;background:linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
-                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#666;font-weight:600;">Cyber Bullying</h5>
-                        <div style="font-size:1.8em;font-weight:bold;color:#333;" id="historialCyberBullying">0</div>
+                        <h5 style="font-size:0.85em;margin-bottom:8px;color:#4b5563;font-weight:600;">Cyber Bullying</h5>
+                        <div style="font-size:1.8em;font-weight:bold;color:#1f2937;" id="historialCyberBullying">0</div>
                     </div>
                 </div>
             </div>
@@ -8764,6 +8764,11 @@ function renderGraficoCursos() {
     if (conDatos.length === 0) {
         container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px 20px;">No hay incidencias registradas para el período seleccionado.</p>';
     } else {
+        const esOscuro = document.body.classList.contains('dark-mode');
+        const colTxtBarra = esOscuro ? '#cbd5e1' : '#555';
+        const colCurso    = esOscuro ? '#e2e8f0' : '#374151';
+        const colGuiaTxt  = esOscuro ? '#94a3b8' : '#9ca3af';
+        const colGuiaLine = esOscuro ? '#334155' : '#e5e7eb';
         const maxVal = Math.max.apply(null, conDatos.map(function(d) { return Math.max(d.leves, d.graves, d.muyGraves, 1); }));
         const barW = 16, gap = 6, groupGap = 18;
         const groupW = barW * 3 + gap * 2 + groupGap;
@@ -8780,7 +8785,7 @@ function renderGraficoCursos() {
                 const y = topPad + chartH - h;
                 return '<rect x="' + (x + offset) + '" y="' + y + '" width="' + barW + '" height="' + h + '" fill="' + color + '" rx="3">' +
                        '<title>' + val + '</title></rect>' +
-                       '<text x="' + (x + offset + barW / 2) + '" y="' + (y - 4) + '" text-anchor="middle" font-size="9" fill="#555">' + (val > 0 ? val : '') + '</text>';
+                       '<text x="' + (x + offset + barW / 2) + '" y="' + (y - 4) + '" text-anchor="middle" font-size="9" fill="' + colTxtBarra + '">' + (val > 0 ? val : '') + '</text>';
             }
 
             svgBars += bar(d.leves,     '#22c55e', 0);
@@ -8796,7 +8801,7 @@ function renderGraficoCursos() {
             }
 
             // Curso label
-            svgBars += '<text x="' + (x + groupW / 2 - groupGap / 2) + '" y="' + (topPad + chartH + 14) + '" text-anchor="middle" font-size="10" fill="#374151" font-weight="600">' + d.curso + '</text>';
+            svgBars += '<text x="' + (x + groupW / 2 - groupGap / 2) + '" y="' + (topPad + chartH + 14) + '" text-anchor="middle" font-size="10" fill="' + colCurso + '" font-weight="600">' + d.curso + '</text>';
         });
 
         // Líneas guía horizontales
@@ -8804,8 +8809,8 @@ function renderGraficoCursos() {
         [0.25, 0.5, 0.75, 1].forEach(function(p) {
             const y = topPad + chartH - Math.round(p * chartH);
             const v = Math.round(p * maxVal);
-            guias += '<line x1="14" y1="' + y + '" x2="' + totalW + '" y2="' + y + '" stroke="#e5e7eb" stroke-width="1"/>';
-            guias += '<text x="10" y="' + (y + 4) + '" text-anchor="end" font-size="9" fill="#9ca3af">' + v + '</text>';
+            guias += '<line x1="14" y1="' + y + '" x2="' + totalW + '" y2="' + y + '" stroke="' + colGuiaLine + '" stroke-width="1"/>';
+            guias += '<text x="10" y="' + (y + 4) + '" text-anchor="end" font-size="9" fill="' + colGuiaTxt + '">' + v + '</text>';
         });
 
         container.innerHTML =
