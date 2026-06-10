@@ -573,7 +573,7 @@ class NotasRapidas {
                 textoFecha = `📅 ${this.formatearFechaAccion(fechaAccion)}`;
             }
             
-            const colorFecha = esVencida ? '#dc2626' : esHoy ? '#ea580c' : '#059669';
+            const colorFecha = esVencida ? '#f97316' : esHoy ? '#3b82f6' : '#059669';
             fechaAccionHTML = `<div style="font-weight:600;color:${colorFecha};margin-top:6px;font-size:0.9em;">${textoFecha}</div>`;
         }
         
