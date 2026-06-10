@@ -7598,6 +7598,7 @@ function verDetalleReunion(index) {
     const fechaSeg = r['Fecha Seguimiento'] || r.fechaSeguimiento || '';
     const observaciones = r['Observaciones'] || r.observaciones || '';
     const asistio = r['Asistió'] || r['asistio'] || r.asistio || 'No';
+    const esOscuro = document.body.classList.contains('dark-mode');
     
     // Icono según tipo
     const iconoTipo = tipo === 'Llamada telefónica' ? '📞' : '🏫';
@@ -7656,8 +7657,8 @@ function verDetalleReunion(index) {
             ${acuerdosLista}
         </div>
         
-        <div style="padding:15px;background:${estado === 'Cumplido' ? '#d4edda' : estado === 'En seguimiento' ? '#d1ecf1' : '#f8d7da'};border-radius:8px;margin-bottom:15px;">
-            <p><strong>Estado:</strong> <span style="color:${estado === 'Cumplido' ? '#155724' : estado === 'En seguimiento' ? '#0c5460' : '#721c24'}">${estado}</span></p>
+        <div style="padding:15px;background:${esOscuro ? '#0f172a' : (estado === 'Cumplido' ? '#d4edda' : estado === 'En seguimiento' ? '#d1ecf1' : '#f8d7da')};border-radius:8px;margin-bottom:15px;">
+            <p><strong>Estado:</strong> <span style="color:${esOscuro ? (estado === 'Cumplido' ? '#34d399' : estado === 'En seguimiento' ? '#38bdf8' : '#f87171') : (estado === 'Cumplido' ? '#155724' : estado === 'En seguimiento' ? '#0c5460' : '#721c24')}">${estado}</span></p>
             ${fechaSeg ? `<p><strong>Seguimiento:</strong> ${new Date(fechaSeg).toLocaleDateString('es-DO')}</p>` : ''}
             ${observaciones ? `<p><strong>Observaciones:</strong> ${observaciones}</p>` : ''}
         </div>
