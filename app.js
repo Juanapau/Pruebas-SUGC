@@ -2809,10 +2809,10 @@ function mostrarEstudiantesSinContactos(estudiantes) {
         const curso = est.Curso || est.curso || '-';
         
         return `
-        <tr style="background:#fef2f2;">
-            <td><strong style="color:#991b1b;">${nombre}</strong></td>
+        <tr>
+            <td><strong>${nombre}</strong></td>
             <td>${curso}</td>
-            <td style="color:#7f1d1d;font-style:italic;">Sin contacto registrado</td>
+            <td style="font-style:italic;">Sin contacto registrado</td>
             <td>
                 <button class="btn btn-sm" onclick="agregarContactoRapido('${nombre.replace(/'/g, "\\'")}', '${curso}')" 
                         style="background:#059669;color:white;padding:5px 12px;font-size:0.85em;">
