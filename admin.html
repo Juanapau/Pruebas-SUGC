@@ -2646,21 +2646,33 @@ header img {
         
     </style>
     <script>
-      // Anti-parpadeo: al volver al panel en modo consulta (?anio=), ocultar de
-      // inmediato las tarjetas/botones no disponibles en consulta, antes del primer render.
+      // Anti-parpadeo: aplicar de inmediato (antes del primer render) el modo consulta
+      // y el TEMA OSCURO guardado, para que al actualizar no aparezca primero el tema claro.
       (function(){
         if (new URLSearchParams(location.search).get('anio')) {
           document.documentElement.classList.add('pre-modo-consulta');
         }
+        try {
+          if (localStorage.getItem('censaTema') === 'oscuro') {
+            document.documentElement.classList.add('tema-oscuro-pre');
+          }
+        } catch(e){}
       })();
     </script>
     <style>
       html.pre-modo-consulta #cardMaestros,
       html.pre-modo-consulta #cardContactos,
       html.pre-modo-consulta .notificaciones-btn { display: none !important; }
+      /* Anti-parpadeo del tema oscuro: fondo oscuro inmediato */
+      html.tema-oscuro-pre,
+      html.tema-oscuro-pre body { background: #0f172a !important; }
     </style>
 </head>
 <body>
+    <script>
+      // Anti-parpadeo: poner la clase dark-mode en el body ANTES de renderizar el contenido
+      try { if (localStorage.getItem('censaTema') === 'oscuro') document.body.classList.add('dark-mode'); } catch(e){}
+    </script>
     <div class="container">
         <header>
             <img src="./logo.png" alt="Logo PNSA" class="logo-header" id="logoHeader">
