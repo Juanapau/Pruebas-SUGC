@@ -5449,45 +5449,59 @@ function abrirHistorialEstudiante(nombreEstudiante) {
 }
 
 // ===== Comparativa de comportamiento por año escolar (historial del estudiante) =====
-async function renderComparativaAnual(nombreEstudiante) {
-    const cont = document.getElementById('comparativaAnualContent');
-    if (!cont) return;
+// Caché del último estudiante consultado, para que el PDF reutilice lo ya cargado.
+let _comparativaAnualCache = { nombre: null, datos: null };
+
+// Trae los registros del estudiante de TODOS los años y devuelve el conteo por año.
+async function obtenerComparativaAnual(nombreEstudiante) {
+    const nombreLC = (nombreEstudiante || '').toLowerCase();
+    if (_comparativaAnualCache.nombre === nombreLC && _comparativaAnualCache.datos) {
+        return _comparativaAnualCache.datos;
+    }
 
     const anios = (ANIOS_DISPONIBLES && ANIOS_DISPONIBLES.length)
         ? ANIOS_DISPONIBLES.slice()
         : (ANIO_ACTIVO ? [ANIO_ACTIVO] : []);
-
-    if (!anios.length) {
-        cont.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:24px;">No hay años escolares configurados para comparar.</p>';
-        return;
-    }
+    if (!anios.length) return [];
 
     // Ordenar cronológicamente por el año de inicio (ej. "2025-2026" -> 2025)
     anios.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
 
-    const nombreLC = (nombreEstudiante || '').toLowerCase();
     const tipoDe = (i) => (i['Tipo'] || i['Tipo de falta'] || i['Tipo de Falta'] || i.tipoFalta || i.tipo || '');
     const nombreDe = (r) => (r['Nombre Estudiante'] || r.estudiante || '');
 
+    const datos = await Promise.all(anios.map(async (anio) => {
+        let inc = [], tar = [];
+        if (CONFIG.urlIncidencias) {
+            inc = await cargarDatosDesdeGoogleSheets(CONFIG.urlIncidencias + '&anio=' + encodeURIComponent(anio)) || [];
+        }
+        if (CONFIG.urlTardanzas) {
+            tar = await cargarDatosDesdeGoogleSheets(CONFIG.urlTardanzas + '&anio=' + encodeURIComponent(anio)) || [];
+        }
+        const incEst = inc.filter(i => nombreDe(i).toLowerCase() === nombreLC);
+        const tarEst = tar.filter(t => nombreDe(t).toLowerCase() === nombreLC);
+        return {
+            anio,
+            leves:     incEst.filter(i => tipoDe(i) === 'Leve').length,
+            graves:    incEst.filter(i => tipoDe(i) === 'Grave').length,
+            muyGraves: incEst.filter(i => tipoDe(i) === 'Muy Grave').length,
+            tardanzas: tarEst.length
+        };
+    }));
+
+    _comparativaAnualCache = { nombre: nombreLC, datos };
+    return datos;
+}
+
+async function renderComparativaAnual(nombreEstudiante) {
+    const cont = document.getElementById('comparativaAnualContent');
+    if (!cont) return;
     try {
-        const datos = await Promise.all(anios.map(async (anio) => {
-            let inc = [], tar = [];
-            if (CONFIG.urlIncidencias) {
-                inc = await cargarDatosDesdeGoogleSheets(CONFIG.urlIncidencias + '&anio=' + encodeURIComponent(anio)) || [];
-            }
-            if (CONFIG.urlTardanzas) {
-                tar = await cargarDatosDesdeGoogleSheets(CONFIG.urlTardanzas + '&anio=' + encodeURIComponent(anio)) || [];
-            }
-            const incEst = inc.filter(i => nombreDe(i).toLowerCase() === nombreLC);
-            const tarEst = tar.filter(t => nombreDe(t).toLowerCase() === nombreLC);
-            return {
-                anio,
-                leves:     incEst.filter(i => tipoDe(i) === 'Leve').length,
-                graves:    incEst.filter(i => tipoDe(i) === 'Grave').length,
-                muyGraves: incEst.filter(i => tipoDe(i) === 'Muy Grave').length,
-                tardanzas: tarEst.length
-            };
-        }));
+        const datos = await obtenerComparativaAnual(nombreEstudiante);
+        if (!datos.length) {
+            cont.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:24px;">No hay años escolares configurados para comparar.</p>';
+            return;
+        }
         cont.innerHTML = construirGraficoComparativa(datos);
     } catch (e) {
         console.error('Error al cargar comparativa anual:', e);
@@ -5599,6 +5613,278 @@ function construirGraficoComparativa(datos) {
     return trendHTML + '<div style="overflow-x:auto;">' + svg + '</div>';
 }
 
+// Dibuja la comparativa por año escolar de forma nativa (vectorial) en el PDF.
+function dibujarGraficoComparativaPDF(doc, datos, yPos) {
+    // Salto de página si no cabe la sección completa (~85mm)
+    if (yPos > 190) { doc.addPage(); yPos = 20; }
+
+    // Título de sección
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 58, 138);
+    doc.text('COMPARATIVA POR AÑO ESCOLAR', 14, yPos);
+    yPos += 6;
+
+    const series = [
+        { key: 'leves',     label: 'Leves',      color: [34, 197, 94] },
+        { key: 'graves',    label: 'Graves',     color: [249, 115, 22] },
+        { key: 'muyGraves', label: 'Muy Graves', color: [220, 38, 38] },
+        { key: 'tardanzas', label: 'Tardanzas',  color: [245, 158, 11] }
+    ];
+
+    const totalGlobal = (datos || []).reduce((s, d) => s + d.leves + d.graves + d.muyGraves + d.tardanzas, 0);
+    if (!datos || !datos.length || totalGlobal === 0) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Sin incidencias ni tardanzas registradas en ningún año escolar.', 14, yPos);
+        doc.setTextColor(0, 0, 0);
+        return yPos + 8;
+    }
+
+    // Texto de tendencia (compara los dos últimos años con registros)
+    const conDatos = datos.filter(d => (d.leves + d.graves + d.muyGraves + d.tardanzas) > 0);
+    doc.setFontSize(9);
+    if (conDatos.length >= 2) {
+        const ult = conDatos[conDatos.length - 1];
+        const prev = conDatos[conDatos.length - 2];
+        const fUlt = ult.leves + ult.graves + ult.muyGraves;
+        const fPrev = prev.leves + prev.graves + prev.muyGraves;
+        const diff = fUlt - fPrev;
+        let color, texto;
+        if (diff < 0)      { color = [22, 163, 74];  texto = `Mejoría: las faltas bajaron de ${fPrev} a ${fUlt}`; }
+        else if (diff > 0) { color = [220, 38, 38];  texto = `Atención: las faltas subieron de ${fPrev} a ${fUlt}`; }
+        else               { color = [100, 100, 100]; texto = `Las faltas se mantuvieron en ${fUlt}`; }
+        const enCurso = (ult.anio === ANIO_ACTIVO) ? ' (año en curso, aún incompleto)' : '';
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(color[0], color[1], color[2]);
+        const lineas = doc.splitTextToSize(`${texto} en ${ult.anio} respecto a ${prev.anio}${enCurso}.`, 182);
+        doc.text(lineas, 14, yPos);
+        yPos += lineas.length * 5 + 1;
+    } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Aún no hay otro año escolar con registros para comparar.', 14, yPos);
+        yPos += 6;
+    }
+
+    // Área del gráfico
+    const plotLeft = 22, plotRight = 196;
+    const plotW = plotRight - plotLeft;
+    const plotTop = yPos + 2;
+    const plotH = 50;
+    const plotBottom = plotTop + plotH;
+
+    const maxVal = Math.max(1, ...datos.flatMap(d => series.map(s => d[s.key])));
+    const steps = 4;
+    const yTop = Math.max(steps, Math.ceil(maxVal / steps) * steps);
+
+    // Líneas guía + etiquetas del eje Y
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.2);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(120, 120, 120);
+    for (let i = 0; i <= steps; i++) {
+        const val = Math.round(yTop * i / steps);
+        const yy = plotBottom - (val / yTop) * plotH;
+        doc.line(plotLeft, yy, plotRight, yy);
+        doc.text(String(val), plotLeft - 2, yy + 1, { align: 'right' });
+    }
+
+    // Barras agrupadas
+    const nGroups = datos.length;
+    const groupW = plotW / nGroups;
+    const innerPad = groupW * 0.14;
+    const barGap = 1.5;
+    const barsAreaW = groupW - innerPad * 2;
+    const barW = Math.max(2, (barsAreaW - barGap * (series.length - 1)) / series.length);
+
+    datos.forEach((d, gi) => {
+        const gx = plotLeft + gi * groupW;
+        series.forEach((s, si) => {
+            const v = d[s.key];
+            if (v > 0) {
+                const bh = (v / yTop) * plotH;
+                const bx = gx + innerPad + si * (barW + barGap);
+                const by = plotBottom - bh;
+                doc.setFillColor(s.color[0], s.color[1], s.color[2]);
+                doc.rect(bx, by, barW, bh, 'F');
+                doc.setFontSize(6);
+                doc.setTextColor(60, 60, 60);
+                doc.text(String(v), bx + barW / 2, by - 1, { align: 'center' });
+            }
+        });
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(40, 40, 40);
+        const etiqueta = d.anio + (d.anio === ANIO_ACTIVO ? ' (en curso)' : '');
+        doc.text(etiqueta, gx + groupW / 2, plotBottom + 5, { align: 'center' });
+    });
+
+    // Eje X
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineWidth(0.3);
+    doc.line(plotLeft, plotBottom, plotRight, plotBottom);
+
+    yPos = plotBottom + 10;
+
+    // Leyenda
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    let lx = plotLeft;
+    series.forEach(s => {
+        doc.setFillColor(s.color[0], s.color[1], s.color[2]);
+        doc.rect(lx, yPos - 3, 4, 4, 'F');
+        doc.setTextColor(60, 60, 60);
+        doc.text(s.label, lx + 6, yPos);
+        lx += 6 + s.label.length * 1.9 + 8;
+    });
+    yPos += 8;
+
+    doc.setTextColor(0, 0, 0);
+    return yPos;
+}
+
+// Dibuja la comparativa por año escolar de forma nativa en el PDF (mismo estilo del resto).
+function dibujarComparativaAnualPDF(doc, datos, yPos) {
+    const totalGlobal = datos.reduce((s, d) => s + d.leves + d.graves + d.muyGraves + d.tardanzas, 0);
+
+    // Reservar espacio: si el bloque no cabe en la página, pasar a una nueva
+    const espacioNecesario = (totalGlobal === 0) ? 24 : 92;
+    if (yPos > 277 - espacioNecesario) {
+        doc.addPage();
+        yPos = 20;
+    }
+
+    // Encabezado de sección
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 58, 138);
+    doc.text('COMPARATIVA POR AÑO ESCOLAR', 14, yPos);
+    yPos += 6;
+    doc.setTextColor(0, 0, 0);
+
+    if (totalGlobal === 0) {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Sin incidencias ni tardanzas registradas en ningún año escolar.', 14, yPos);
+        doc.setTextColor(0, 0, 0);
+        return yPos + 6;
+    }
+
+    // Texto de tendencia (compara los dos últimos años con registros)
+    const conDatos = datos.filter(d => (d.leves + d.graves + d.muyGraves + d.tardanzas) > 0);
+    if (conDatos.length >= 2) {
+        const ult = conDatos[conDatos.length - 1];
+        const prev = conDatos[conDatos.length - 2];
+        const fUlt = ult.leves + ult.graves + ult.muyGraves;
+        const fPrev = prev.leves + prev.graves + prev.muyGraves;
+        const diff = fUlt - fPrev;
+        const enCurso = (ult.anio === ANIO_ACTIVO) ? ' (en curso, aún incompleto)' : '';
+        let texto, rgb;
+        if (diff < 0)      { rgb = [22, 163, 74];  texto = 'Mejoría: las faltas bajaron de ' + fPrev + ' a ' + fUlt + ' en ' + ult.anio + ' respecto a ' + prev.anio + enCurso + '.'; }
+        else if (diff > 0) { rgb = [220, 38, 38];  texto = 'Atención: las faltas subieron de ' + fPrev + ' a ' + fUlt + ' en ' + ult.anio + ' respecto a ' + prev.anio + enCurso + '.'; }
+        else               { rgb = [90, 90, 90];   texto = 'Las faltas se mantuvieron en ' + fUlt + ' en ' + ult.anio + ' respecto a ' + prev.anio + enCurso + '.'; }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+        const lineas = doc.splitTextToSize(texto, 182);
+        doc.text(lineas, 14, yPos);
+        yPos += lineas.length * 4 + 3;
+        doc.setTextColor(0, 0, 0);
+    } else {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Aún no hay otro año escolar con registros para comparar.', 14, yPos);
+        yPos += 6;
+        doc.setTextColor(0, 0, 0);
+    }
+
+    // Gráfico de barras agrupadas (nativo, mismos colores que en pantalla)
+    const series = [
+        { key: 'leves',     label: 'Leves',      rgb: [34, 197, 94] },
+        { key: 'graves',    label: 'Graves',     rgb: [249, 115, 22] },
+        { key: 'muyGraves', label: 'Muy Graves', rgb: [220, 38, 38] },
+        { key: 'tardanzas', label: 'Tardanzas',  rgb: [245, 158, 11] }
+    ];
+    const axisX = 24, rightX = 196;
+    const plotW = rightX - axisX;
+    const topY = yPos + 2;
+    const plotH = 48;
+    const baseY = topY + plotH;
+
+    const maxVal = Math.max(1, ...datos.flatMap(d => series.map(s => d[s.key])));
+    const steps = 4;
+    const yTop = Math.max(steps, Math.ceil(maxVal / steps) * steps);
+
+    // Líneas guía + etiquetas del eje Y
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    for (let i = 0; i <= steps; i++) {
+        const val = Math.round(yTop * i / steps);
+        const gy = baseY - (val / yTop) * plotH;
+        doc.setDrawColor(226, 228, 232);
+        doc.setLineWidth(0.2);
+        doc.line(axisX, gy, rightX, gy);
+        doc.setTextColor(120, 120, 120);
+        doc.text(String(val), axisX - 2, gy + 1.4, { align: 'right' });
+    }
+
+    // Barras por año
+    const nGroups = datos.length;
+    const groupW = plotW / nGroups;
+    const innerPad = groupW * 0.14;
+    const barGap = 1.5;
+    const barsAreaW = groupW - innerPad * 2;
+    const barW = Math.max(2, (barsAreaW - barGap * (series.length - 1)) / series.length);
+
+    datos.forEach((d, gi) => {
+        const gx = axisX + gi * groupW;
+        series.forEach((s, si) => {
+            const v = d[s.key];
+            if (v > 0) {
+                const bh = (v / yTop) * plotH;
+                const bx = gx + innerPad + si * (barW + barGap);
+                const by = baseY - bh;
+                doc.setFillColor(s.rgb[0], s.rgb[1], s.rgb[2]);
+                doc.rect(bx, by, barW, bh, 'F');
+                doc.setTextColor(70, 70, 70);
+                doc.setFontSize(6);
+                doc.text(String(v), bx + barW / 2, by - 1, { align: 'center' });
+            }
+        });
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        const etq = d.anio + (d.anio === ANIO_ACTIVO ? ' (en curso)' : '');
+        doc.text(etq, gx + groupW / 2, baseY + 4, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+    });
+
+    // Eje X
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineWidth(0.3);
+    doc.line(axisX, baseY, rightX, baseY);
+
+    // Leyenda
+    let ly = baseY + 9, lx = axisX;
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    series.forEach(s => {
+        doc.setFillColor(s.rgb[0], s.rgb[1], s.rgb[2]);
+        doc.rect(lx, ly - 2.5, 3, 3, 'F');
+        doc.setTextColor(80, 80, 80);
+        doc.text(s.label, lx + 4.5, ly);
+        lx += 4.5 + doc.getTextWidth(s.label) + 6;
+    });
+
+    doc.setTextColor(0, 0, 0);
+    return ly + 6;
+}
+
 function cerrarHistorialEstudiante() {
     const modal = document.getElementById('modalHistorialEstudiante');
     if (modal) {
@@ -5606,7 +5892,7 @@ function cerrarHistorialEstudiante() {
     }
 }
 
-function exportarHistorialPDF(nombreEstudiante) {
+async function exportarHistorialPDF(nombreEstudiante) {
     // Buscar información del estudiante
     const estudiante = datosEstudiantes.find(e => {
         const nombre = e['Nombre Completo'] || e.nombre || '';
@@ -5959,6 +6245,14 @@ function exportarHistorialPDF(nombreEstudiante) {
             
             doc.setTextColor(0, 0, 0);
         });
+    }
+    
+    // SECCIÓN: COMPARATIVA POR AÑO ESCOLAR (gráfico de evolución por año)
+    try {
+        const datosComparativa = await obtenerComparativaAnual(nombreEstudiante);
+        yPos = dibujarComparativaAnualPDF(doc, datosComparativa, yPos + 4);
+    } catch (e) {
+        console.error('No se pudo incluir la comparativa anual en el PDF:', e);
     }
     
     // Pie de página con fecha de generación
