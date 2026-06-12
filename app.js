@@ -5425,6 +5425,14 @@ function abrirHistorialEstudiante(nombreEstudiante) {
                 ${htmlTimeline}
             </div>
             
+            <!-- COMPARATIVA POR AÑO ESCOLAR -->
+            <h3 style="color:#333;margin-top:30px;margin-bottom:15px;padding-bottom:10px;border-bottom:2px solid #e0e0e0;display:flex;align-items:center;gap:10px;">
+                📈 Comparativa por Año Escolar
+            </h3>
+            <div id="comparativaAnualContent" style="margin-bottom:10px;">
+                <p style="text-align:center;color:#9ca3af;padding:24px;">⏳ Cargando comparativa por año...</p>
+            </div>
+            
             <!-- BOTÓN EXPORTAR -->
             <div style="margin-top:30px;text-align:center;">
                 <button class="btn btn-success" onclick="exportarHistorialPDF('${nombre.replace(/'/g, "\\'")}')">📄 Exportar Historial Completo a PDF</button>
@@ -5435,6 +5443,160 @@ function abrirHistorialEstudiante(nombreEstudiante) {
 </div>`;
     
     document.getElementById('modalContainer').innerHTML += modalHTML;
+
+    // Comparativa de comportamiento por año escolar (carga asíncrona al final del historial)
+    renderComparativaAnual(nombre);
+}
+
+// ===== Comparativa de comportamiento por año escolar (historial del estudiante) =====
+async function renderComparativaAnual(nombreEstudiante) {
+    const cont = document.getElementById('comparativaAnualContent');
+    if (!cont) return;
+
+    const anios = (ANIOS_DISPONIBLES && ANIOS_DISPONIBLES.length)
+        ? ANIOS_DISPONIBLES.slice()
+        : (ANIO_ACTIVO ? [ANIO_ACTIVO] : []);
+
+    if (!anios.length) {
+        cont.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:24px;">No hay años escolares configurados para comparar.</p>';
+        return;
+    }
+
+    // Ordenar cronológicamente por el año de inicio (ej. "2025-2026" -> 2025)
+    anios.sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
+
+    const nombreLC = (nombreEstudiante || '').toLowerCase();
+    const tipoDe = (i) => (i['Tipo'] || i['Tipo de falta'] || i['Tipo de Falta'] || i.tipoFalta || i.tipo || '');
+    const nombreDe = (r) => (r['Nombre Estudiante'] || r.estudiante || '');
+
+    try {
+        const datos = await Promise.all(anios.map(async (anio) => {
+            let inc = [], tar = [];
+            if (CONFIG.urlIncidencias) {
+                inc = await cargarDatosDesdeGoogleSheets(CONFIG.urlIncidencias + '&anio=' + encodeURIComponent(anio)) || [];
+            }
+            if (CONFIG.urlTardanzas) {
+                tar = await cargarDatosDesdeGoogleSheets(CONFIG.urlTardanzas + '&anio=' + encodeURIComponent(anio)) || [];
+            }
+            const incEst = inc.filter(i => nombreDe(i).toLowerCase() === nombreLC);
+            const tarEst = tar.filter(t => nombreDe(t).toLowerCase() === nombreLC);
+            return {
+                anio,
+                leves:     incEst.filter(i => tipoDe(i) === 'Leve').length,
+                graves:    incEst.filter(i => tipoDe(i) === 'Grave').length,
+                muyGraves: incEst.filter(i => tipoDe(i) === 'Muy Grave').length,
+                tardanzas: tarEst.length
+            };
+        }));
+        cont.innerHTML = construirGraficoComparativa(datos);
+    } catch (e) {
+        console.error('Error al cargar comparativa anual:', e);
+        cont.innerHTML = '<p style="text-align:center;color:#dc3545;padding:24px;">No se pudo cargar la comparativa por año. Intenta recargar el historial.</p>';
+    }
+}
+
+function construirGraficoComparativa(datos) {
+    const esOscuro  = document.body.classList.contains('dark-mode');
+    const cText     = esOscuro ? '#e2e8f0' : '#374151';
+    const cTextSoft = esOscuro ? '#94a3b8' : '#6b7280';
+    const cGrid     = esOscuro ? '#334155' : '#e5e7eb';
+    const cAxis     = esOscuro ? '#475569' : '#9ca3af';
+    const cPanel    = esOscuro ? '#0f172a' : '#f8fafc';
+
+    const series = [
+        { key: 'leves',     label: 'Leves',      color: '#22c55e' },
+        { key: 'graves',    label: 'Graves',     color: '#f97316' },
+        { key: 'muyGraves', label: 'Muy Graves', color: '#dc2626' },
+        { key: 'tardanzas', label: 'Tardanzas',  color: '#f59e0b' }
+    ];
+
+    const totalGlobal = datos.reduce((s, d) => s + d.leves + d.graves + d.muyGraves + d.tardanzas, 0);
+    if (totalGlobal === 0) {
+        return '<p style="text-align:center;color:' + cTextSoft + ';padding:30px;">Este estudiante no tiene incidencias ni tardanzas registradas en ningún año escolar.</p>';
+    }
+
+    // ---- Texto de tendencia: compara los dos últimos años CON registros ----
+    const conDatos = datos.filter(d => (d.leves + d.graves + d.muyGraves + d.tardanzas) > 0);
+    let trendHTML = '';
+    if (conDatos.length >= 2) {
+        const ult  = conDatos[conDatos.length - 1];
+        const prev = conDatos[conDatos.length - 2];
+        const fUlt  = ult.leves + ult.graves + ult.muyGraves;
+        const fPrev = prev.leves + prev.graves + prev.muyGraves;
+        const diff = fUlt - fPrev;
+        const enCurso = (ult.anio === ANIO_ACTIVO) ? ' (año en curso, aún incompleto)' : '';
+        let icono, color, texto;
+        if (diff < 0)      { icono = '▼'; color = '#16a34a'; texto = 'Mejoría: las faltas bajaron de ' + fPrev + ' a ' + fUlt; }
+        else if (diff > 0) { icono = '▲'; color = '#dc2626'; texto = 'Atención: las faltas subieron de ' + fPrev + ' a ' + fUlt; }
+        else               { icono = '='; color = cTextSoft; texto = 'Las faltas se mantuvieron en ' + fUlt; }
+        trendHTML =
+            '<div style="background:' + cPanel + ';border-left:4px solid ' + color + ';padding:12px 16px;border-radius:8px;margin-bottom:18px;">' +
+                '<span style="color:' + color + ';font-weight:700;font-size:1.1em;margin-right:6px;">' + icono + '</span>' +
+                '<span style="color:' + cText + ';font-weight:600;">' + texto + '</span>' +
+                '<span style="color:' + cTextSoft + ';"> en ' + ult.anio + ' respecto a ' + prev.anio + enCurso + '.</span>' +
+            '</div>';
+    } else {
+        trendHTML = '<div style="background:' + cPanel + ';border-left:4px solid ' + cAxis + ';padding:12px 16px;border-radius:8px;margin-bottom:18px;color:' + cTextSoft + ';">Aún no hay otro año escolar con registros para comparar.</div>';
+    }
+
+    // ---- Gráfico de barras agrupadas (SVG, compatible con modo claro/oscuro) ----
+    const W = 720, H = 360;
+    const padL = 44, padR = 16, padT = 24, padB = 64;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+    const nGroups = datos.length;
+    const groupW = plotW / nGroups;
+    const innerPad = groupW * 0.14;
+    const barGap = 4;
+    const barsAreaW = groupW - innerPad * 2;
+    const barW = Math.max(6, (barsAreaW - barGap * (series.length - 1)) / series.length);
+
+    const maxVal = Math.max(1, ...datos.flatMap(d => series.map(s => d[s.key])));
+    const steps = 4;
+    const yTop = Math.max(steps, Math.ceil(maxVal / steps) * steps);
+    const yToPix = (v) => padT + plotH - (v / yTop) * plotH;
+
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:inherit;display:block;">';
+
+    // Líneas guía y etiquetas del eje Y
+    for (let i = 0; i <= steps; i++) {
+        const val = Math.round(yTop * i / steps);
+        const y = yToPix(val);
+        svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="' + cGrid + '" stroke-width="1"/>';
+        svg += '<text x="' + (padL - 8) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="end" font-size="11" fill="' + cTextSoft + '">' + val + '</text>';
+    }
+
+    // Grupos de barras por año
+    datos.forEach((d, gi) => {
+        const gx = padL + gi * groupW;
+        series.forEach((s, si) => {
+            const v = d[s.key];
+            const bx = gx + innerPad + si * (barW + barGap);
+            const by = yToPix(v);
+            const bh = (padT + plotH) - by;
+            if (v > 0) {
+                svg += '<rect x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="3" fill="' + s.color + '"/>';
+                svg += '<text x="' + (bx + barW / 2).toFixed(1) + '" y="' + (by - 4).toFixed(1) + '" text-anchor="middle" font-size="10" font-weight="700" fill="' + cText + '">' + v + '</text>';
+            }
+        });
+        const etiqueta = d.anio + (d.anio === ANIO_ACTIVO ? ' • en curso' : '');
+        svg += '<text x="' + (gx + groupW / 2).toFixed(1) + '" y="' + (padT + plotH + 20) + '" text-anchor="middle" font-size="12" font-weight="600" fill="' + cText + '">' + etiqueta + '</text>';
+    });
+
+    // Eje X
+    svg += '<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '" stroke="' + cAxis + '" stroke-width="1.5"/>';
+
+    // Leyenda
+    const legendY = H - 22;
+    let lx = padL;
+    series.forEach(s => {
+        svg += '<rect x="' + lx + '" y="' + (legendY - 10) + '" width="12" height="12" rx="2" fill="' + s.color + '"/>';
+        svg += '<text x="' + (lx + 17) + '" y="' + legendY + '" font-size="12" fill="' + cTextSoft + '">' + s.label + '</text>';
+        lx += 17 + s.label.length * 7 + 20;
+    });
+
+    svg += '</svg>';
+    return trendHTML + '<div style="overflow-x:auto;">' + svg + '</div>';
 }
 
 function cerrarHistorialEstudiante() {
