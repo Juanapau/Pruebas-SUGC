@@ -4373,8 +4373,10 @@ function cambiarTema(tema) {
 function aplicarTema(tema) {
     if (tema === 'oscuro') {
         document.body.classList.add('dark-mode');
+        document.documentElement.classList.add('tema-oscuro-pre');
     } else {
         document.body.classList.remove('dark-mode');
+        document.documentElement.classList.remove('tema-oscuro-pre');
     }
 }
 
@@ -4681,16 +4683,6 @@ function crearModalReportes() {
                 * El <strong>Índice de Riesgo</strong> (0–100%) combina tres factores con igual peso: <strong>Gravedad</strong> (qué tan graves son las faltas en promedio), <strong>Cobertura</strong> (qué % del curso tiene incidencias) y <strong>Reincidencia</strong> (faltas promedio por alumno afectado). El curso con mayor riesgo marca 100% y los demás se escalan proporcionalmente.
             </p>
             
-            <hr style="margin:40px 0;">
-            <h3>Reporte por Curso</h3>
-            <div class="form-group">
-                <label>Seleccione Curso</label>
-                <select id="cursoReporte">
-                    <option value="">Todos</option>
-                    ${CURSOS.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
-            </div>
-            <button class="btn btn-primary" onclick="generarReporte()">📊 Generar Reporte por Curso</button>
             
             <hr style="margin:40px 0;">
             <h3>Reporte por Estudiante</h3>
