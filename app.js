@@ -6048,10 +6048,12 @@ async function exportarHistorialPDF(nombreEstudiante) {
             
             if (evento.tipo === 'incidencia') {
                 icono = 'INCIDENCIA';
-                if (evento.gravedad === 'Grave' || evento.gravedad === 'Muy Grave') {
+                if (evento.gravedad === 'Muy Grave') {
                     colorFondo = [220, 38, 38]; // Rojo
+                } else if (evento.gravedad === 'Grave') {
+                    colorFondo = [249, 115, 22]; // Naranja
                 } else {
-                    colorFondo = [245, 158, 11]; // Naranja
+                    colorFondo = [34, 197, 94]; // Verde (Leve)
                 }
             } else if (evento.tipo === 'tardanza') {
                 icono = 'TARDANZA';
