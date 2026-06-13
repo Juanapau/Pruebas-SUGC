@@ -4685,13 +4685,13 @@ function crearModalReportes() {
             
             
             <hr style="margin:40px 0;">
-            <h3>Reporte por Estudiante</h3>
+            <h3>Historial del Estudiante</h3>
             <div class="form-group" style="position:relative;">
                 <label>Buscar Estudiante</label>
                 <input type="text" id="estudianteReporte" data-sugerencias="sugerenciasReporte" placeholder="Escriba el nombre del estudiante..." style="width:100%;">
                 <div id="sugerenciasReporte" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ccc;max-height:200px;overflow-y:auto;width:100%;box-shadow:0 2px 8px rgba(0,0,0,0.1);"></div>
             </div>
-            <button class="btn btn-primary" onclick="generarReporteEstudiante()">📊 Generar Reporte Individual</button>
+            <button class="btn btn-primary" onclick="generarReporteEstudiante()">📋 Ver Historial Completo</button>
             
             <div id="contenidoReporte" style="margin-top:30px;"></div>
         </div>
@@ -4951,151 +4951,27 @@ function generarReporte() {
 function generarReporteEstudiante() {
     const estudiante = document.getElementById('estudianteReporte').value;
     const contenedor = document.getElementById('contenidoReporte');
-    
+
     if (!estudiante) {
         contenedor.innerHTML = '<div class="alert alert-info" style="display:block;">Escriba el nombre de un estudiante</div>';
         return;
     }
-    
-    // Buscar información del estudiante con compatibilidad de nombres
+
+    // Buscar el estudiante (compatibilidad de nombres)
     const infoEstudiante = datosEstudiantes.find(e => {
         const nombre = e['Nombre Completo'] || e.nombre || '';
         return nombre.toLowerCase() === estudiante.toLowerCase();
     });
-    
+
     if (!infoEstudiante) {
         contenedor.innerHTML = '<div class="alert alert-info" style="display:block;">Estudiante no encontrado en el sistema</div>';
         return;
     }
-    
-    const cursoEst = infoEstudiante['Curso'] || infoEstudiante.curso || '';
-    
-    // Buscar incidencias del estudiante
-    const incEstudiante = datosIncidencias.filter(i => {
-        const nombre = i['Nombre Estudiante'] || i.estudiante || '';
-        return nombre.toLowerCase() === estudiante.toLowerCase();
-    });
-    
-    // Buscar tardanzas del estudiante
-    const tardEstudiante = datosTardanzas.filter(t => {
-        const nombre = t['Nombre Estudiante'] || t.estudiante || '';
-        return nombre.toLowerCase() === estudiante.toLowerCase();
-    });
-    
-    // Buscar contactos
-    const contactoEstudiante = datosContactos.find(c => {
-        const nombre = c['Nombre Estudiante'] || c['Mombre Estudiante'] || c.estudiante || '';
-        return nombre.toLowerCase() === estudiante.toLowerCase();
-    });
-    
-    // Generar reporte detallado
-    let htmlIncidencias = '';
-    if (incEstudiante.length > 0) {
-        htmlIncidencias = '<h4>Incidencias Registradas:</h4><ul style="line-height:2;">';
-        incEstudiante.forEach(inc => {
-            const fechaInc = inc['Fecha y Hora'] || inc.fecha || '';
-            const tipoFalta = inc['Tipo de falta'] || inc.tipoFalta || '';
-            const descripcion = inc['Descripción'] || inc.descripcion || '';
-            const fecha = fechaInc ? new Date(fechaInc).toLocaleDateString('es-DO') : '';
-            htmlIncidencias += `<li><strong>${fecha}</strong> - ${tipoFalta}: ${descripcion}</li>`;
-        });
-        htmlIncidencias += '</ul>';
-    } else {
-        htmlIncidencias = '<p style="color:#28a745;">✅ Sin incidencias registradas</p>';
-    }
-    
-    let htmlTardanzas = '';
-    if (tardEstudiante.length > 0) {
-        // Agrupar por mes
-        const tardanzasPorMes = {};
-        tardEstudiante.forEach(t => {
-            const mes = t['Mes'] || t.mes || '';
-            const año = t['Año'] || t.año || '';
-            const fecha = t['Fecha'] || t.fecha || '';
-            const key = `${mes} ${año}`;
-            if (!tardanzasPorMes[key]) tardanzasPorMes[key] = [];
-            tardanzasPorMes[key].push(fecha);
-        });
-        
-        htmlTardanzas = '<h4>Tardanzas Registradas:</h4><ul style="line-height:2;">';
-        Object.keys(tardanzasPorMes).forEach(mes => {
-            const cantidad = tardanzasPorMes[mes].length;
-            const alerta = cantidad >= 3 ? ' <span style="color:#dc3545;font-weight:bold;">⚠️ REQUIERE ACCIÓN</span>' : '';
-            htmlTardanzas += `<li><strong>${mes}</strong>: ${cantidad} tardanza(s)${alerta}</li>`;
-        });
-        htmlTardanzas += '</ul>';
-        htmlTardanzas += `<p><strong>Total de tardanzas:</strong> ${tardEstudiante.length}</p>`;
-    } else {
-        htmlTardanzas = '<p style="color:#28a745;">✅ Sin tardanzas registradas</p>';
-    }
-    
-    let htmlContacto = '';
-    if (contactoEstudiante) {
-        const nombrePadre = contactoEstudiante['Nombre Padre'] || contactoEstudiante.nombrePadre || 'No registrado';
-        const telPadre = contactoEstudiante['Contacto Padre'] || contactoEstudiante.telPadre || 'Sin teléfono';
-        const nombreMadre = contactoEstudiante['Nombre Madre'] || contactoEstudiante.nombreMadre || 'No registrado';
-        const telMadre = contactoEstudiante['Contacto Madre'] || contactoEstudiante.telMadre || 'Sin teléfono';
-        const telEmergencia = contactoEstudiante['Contacto Emergencia'] || contactoEstudiante.telEmergencia || 'No registrado';
-        
-        htmlContacto = `
-            <h4>Información de Contacto:</h4>
-            <ul style="line-height:2;">
-                <li><strong>Padre:</strong> ${nombrePadre} - ${telPadre}</li>
-                <li><strong>Madre:</strong> ${nombreMadre} - ${telMadre}</li>
-                <li><strong>Contacto de Emergencia:</strong> ${telEmergencia}</li>
-            </ul>
-        `;
-    } else {
-        htmlContacto = '<p style="color:#ffc107;">⚠️ Sin contactos registrados</p>';
-    }
-    
-    contenedor.innerHTML = `
-        <div class="config-section">
-            <h3>📋 Reporte Individual: ${estudiante}</h3>
-            <p><strong>Curso:</strong> ${cursoEst}</p>
-            
-            <hr style="margin:20px 0;">
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h4>Incidencias</h4>
-                    <div class="number" style="color:${incEstudiante.length > 0 ? '#dc3545' : '#28a745'}">${incEstudiante.length}</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Tardanzas</h4>
-                    <div class="number" style="color:${tardEstudiante.length >= 3 ? '#dc3545' : '#28a745'}">${tardEstudiante.length}</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Faltas Leves</h4>
-                    <div class="number">${incEstudiante.filter(i => (i['Tipo de falta'] || i.tipoFalta) === 'Leve').length}</div>
-                </div>
-                <div class="stat-card">
-                    <h4>Faltas Graves</h4>
-                    <div class="number">${incEstudiante.filter(i => {
-                        const tipo = i['Tipo de falta'] || i.tipoFalta || '';
-                        return tipo === 'Grave' || tipo === 'Muy Grave';
-                    }).length}</div>
-                </div>
-            </div>
-            
-            <hr style="margin:30px 0;">
-            
-            ${htmlIncidencias}
-            
-            <hr style="margin:30px 0;">
-            
-            ${htmlTardanzas}
-            
-            <hr style="margin:30px 0;">
-            
-            ${htmlContacto}
-            
-            <div style="margin-top:30px;display:flex;gap:15px;flex-wrap:wrap;">
-                <button class="btn btn-success" onclick="exportarReporteIndividualPDF()">📄 Exportar Reporte a PDF</button>
-                <button class="btn btn-primary" onclick="abrirHistorialEstudiante('${estudiante.replace(/'/g, "\\'")}')">📋 Ver Historial Completo</button>
-            </div>
-        </div>
-    `;
+
+    // El reporte individual fue reemplazado: ahora se abre directamente el Historial Completo
+    contenedor.innerHTML = '';
+    const nombreCanonico = infoEstudiante['Nombre Completo'] || infoEstudiante.nombre || estudiante;
+    abrirHistorialEstudiante(nombreCanonico);
 }
 
 function exportarReporteEstudiante(estudiante) {
