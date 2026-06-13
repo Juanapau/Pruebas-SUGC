@@ -5318,7 +5318,9 @@ function abrirHistorialEstudiante(nombreEstudiante) {
     </div>
 </div>`;
     
-    document.getElementById('modalContainer').innerHTML += modalHTML;
+    // Anexar sin re-serializar el contenedor (innerHTML += destruiría los event listeners
+    // del autocompletado de la sección Reportes y Estadísticas que también vive aquí).
+    document.getElementById('modalContainer').insertAdjacentHTML('beforeend', modalHTML);
 
     // Comparativa de comportamiento por año escolar (carga asíncrona al final del historial)
     renderComparativaAnual(nombre);
