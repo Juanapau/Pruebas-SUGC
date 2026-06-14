@@ -19,6 +19,7 @@ let CONFIG = {
     urlMaestros:      URL_BASE + '?hoja=Maestros',
     urlHorarios:      URL_BASE + '?hoja=Horarios',
     urlNotificaciones: URL_BASE + '?hoja=Notificaciones',
+    urlCondicionales: URL_BASE + '?hoja=Condicionales',
     urlConfig:        URL_BASE + '?hoja=Config'
 };
 
@@ -34,7 +35,7 @@ const CONFIG_PREDETERMINADO = { ...CONFIG };
 let ANIO_ACTIVO = '';
 let ANIOS_DISPONIBLES = [];
 // Hojas cuyos datos se filtran y se sellan por año escolar
-const HOJAS_CON_ANIO = ['Incidencias', 'Tardanzas', 'Reuniones', 'Estudiantes'];
+const HOJAS_CON_ANIO = ['Incidencias', 'Tardanzas', 'Reuniones', 'Estudiantes', 'Condicionales'];
 
 // Lee la hoja Config y guarda el año activo y la lista de años disponibles
 async function cargarConfig() {
@@ -340,7 +341,7 @@ async function recargarContactos() {
 
 async function recargarEstudiantes() {
     const tbody = document.getElementById('bodyEstudiantes');
-    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:40px;color:#666;">🔄 Recargando...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;color:#666;">🔄 Recargando...</td></tr>';
     
     if (CONFIG.urlEstudiantes) {
         const datos = await cargarDatosDesdeGoogleSheets(CONFIG.urlEstudiantes);
@@ -2901,6 +2902,7 @@ function crearModalEstudiantes() {
                 </select>
                 <button class="btn" onclick="recargarEstudiantes()" style="background:#17a2b8;color:white;">🔄 Recargar</button>
                 <button class="btn btn-success" onclick="exportarEstudiantesPDF()">📥 Exportar</button>
+                <button class="btn" onclick="verCondicionales()" style="background:#d97706;color:white;">⚠️ Condicionales</button>
             </div>
             <div class="table-container">
                 <table>
@@ -2908,6 +2910,7 @@ function crearModalEstudiantes() {
                         <tr>
                             <th>Nombre</th>
                             <th>Curso</th>
+                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody id="bodyEstudiantes"></tbody>
@@ -2920,7 +2923,7 @@ function crearModalEstudiantes() {
     
     // Mostrar mensaje de carga
     const tbody = document.getElementById('bodyEstudiantes');
-    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:40px;color:#666;">📥 Cargando estudiantes...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;color:#666;">📥 Cargando estudiantes...</td></tr>';
     
     // Cargar datos desde Google Sheets
     if (CONFIG.urlEstudiantes) {
@@ -3048,20 +3051,10 @@ const actualizarListasEstudiantes = actualizarDatalistsEstudiantes;
 function cargarTablaEstudiantes() {
     const tbody = document.getElementById('bodyEstudiantes');
     if (datosEstudiantes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:40px;color:#999;">No hay estudiantes</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;color:#999;">No hay estudiantes</td></tr>';
         return;
     }
-    tbody.innerHTML = datosEstudiantes.map(e => {
-        const nombre = e['Nombre Completo'] || e.nombre || '-';
-        const curso = e['Curso'] || e.curso || '-';
-        
-        return `
-        <tr>
-            <td><strong>${nombre}</strong></td>
-            <td>${curso}</td>
-        </tr>
-    `;
-    }).join('');
+    tbody.innerHTML = datosEstudiantes.map(filaEstudianteHTML).join('');
 }
 
 function buscarEstudiantes() {
@@ -3079,19 +3072,10 @@ function buscarEstudiantes() {
     
     const tbody = document.getElementById('bodyEstudiantes');
     if (filtrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;padding:40px;color:#999;">No se encontraron resultados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:40px;color:#999;">No se encontraron resultados</td></tr>';
         return;
     }
-    tbody.innerHTML = filtrados.map(e => {
-        const nombre = e['Nombre Completo'] || e.nombre || '-';
-        const curso = e['Curso'] || e.curso || '-';
-        return `
-        <tr>
-            <td><strong>${nombre}</strong></td>
-            <td>${curso}</td>
-        </tr>
-    `;
-    }).join('');
+    tbody.innerHTML = filtrados.map(filaEstudianteHTML).join('');
 }
 
 function exportarEstudiantes() {
@@ -5244,6 +5228,7 @@ function abrirHistorialEstudiante(nombreEstudiante) {
         </div>
         <div style="background:linear-gradient(135deg, #059669 0%, #047857 100%);color:white;padding:0 25px 25px 25px;flex-shrink:0;">
             <p style="font-size:1.1em;opacity:0.9;">${curso}</p>
+            <div id="condicionalHistorialArea">${htmlCondicionalEncabezadoInner(nombre, curso)}</div>
         </div>
         <div class="modal-body" style="overflow-y:auto;flex:1;max-height:calc(90vh - 180px);">
             
@@ -5761,6 +5746,289 @@ function dibujarComparativaAnualPDF(doc, datos, yPos) {
 
     doc.setTextColor(0, 0, 0);
     return ly + 6;
+}
+
+// ============================================================
+// MÓDULO: ESTUDIANTES CONDICIONALES (por año escolar)
+// Hoja "Condicionales": Año Escolar | Nombre Estudiante | Curso | Motivo |
+// Faltas de referencia | Fecha registro | Estado (Vigente/Levantado/Incumplido) |
+// Observaciones | Registrado por
+// ============================================================
+let datosCondicionales = [];
+
+async function recargarCondicionales() {
+    if (!CONFIG.urlCondicionales) return;
+    try {
+        const datos = await cargarDatosDesdeGoogleSheets(CONFIG.urlCondicionales);
+        datosCondicionales = Array.isArray(datos) ? datos : [];
+    } catch (e) {
+        console.error('Error al cargar condicionales:', e);
+    }
+}
+
+// Devuelve el registro condicional VIGENTE del estudiante en el año activo, o null
+function esCondicional(nombreEstudiante) {
+    if (!Array.isArray(datosCondicionales)) return null;
+    const nLC = (nombreEstudiante || '').toLowerCase().trim();
+    return datosCondicionales.find(c => {
+        const nom = (c['Nombre Estudiante'] || c.estudiante || '').toLowerCase().trim();
+        const estado = (c['Estado'] || c.estado || 'Vigente');
+        return nom === nLC && estado === 'Vigente';
+    }) || null;
+}
+
+// Insignia + botón para el encabezado del historial (contenido interno, sin el div contenedor)
+function htmlCondicionalEncabezadoInner(nombre, curso) {
+    const nEsc = (nombre || '').replace(/'/g, "\\'");
+    const cEsc = (curso || '').replace(/'/g, "\\'");
+    if (esCondicional(nombre)) {
+        return `<div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span style="background:#f59e0b;color:#1a1a1a;font-weight:700;padding:6px 14px;border-radius:20px;font-size:0.95em;">⚠️ CONDICIONAL</span>
+                    <button class="btn" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);padding:6px 14px;font-size:0.85em;" onclick="levantarCondicionalDesde('${nEsc}')">Levantar condición</button>
+                </div>`;
+    }
+    return `<div style="margin-top:12px;">
+                <button class="btn" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);padding:6px 14px;font-size:0.9em;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">⚠️ Marcar como condicional</button>
+            </div>`;
+}
+
+// Fila del listado de estudiantes (con celda de estado/acción condicional)
+function filaEstudianteHTML(e) {
+    const nombre = e['Nombre Completo'] || e.nombre || '-';
+    const curso = e['Curso'] || e.curso || '-';
+    const nEsc = nombre.replace(/'/g, "\\'");
+    const cEsc = (curso === '-' ? '' : curso).replace(/'/g, "\\'");
+    const estadoCell = esCondicional(nombre)
+        ? `<span style="background:#f59e0b;color:#1a1a1a;font-weight:700;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">⚠️ Condicional</span>`
+        : `<button class="btn" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:4px 10px;font-size:0.8em;white-space:nowrap;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
+    return `
+        <tr>
+            <td><strong>${nombre}</strong></td>
+            <td>${curso}</td>
+            <td>${estadoCell}</td>
+        </tr>`;
+}
+
+// Abre el formulario para marcar a un estudiante como condicional
+function abrirMarcarCondicional(nombreEstudiante, cursoEstudiante) {
+    let curso = cursoEstudiante || '';
+    if (!curso) {
+        const est = datosEstudiantes.find(e => (e['Nombre Completo'] || e.nombre || '').toLowerCase() === (nombreEstudiante || '').toLowerCase());
+        curso = est ? (est['Curso'] || est.curso || '') : '';
+    }
+    if (esCondicional(nombreEstudiante)) {
+        alert('Este estudiante ya está marcado como condicional en el año activo.');
+        return;
+    }
+    const hoy = new Date().toLocaleDateString('es-DO');
+    const existente = document.getElementById('modalMarcarCondicional');
+    if (existente) existente.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modalMarcarCondicional';
+    overlay.className = 'modal';
+    overlay.style.cssText = 'display:block;z-index:3000;';
+    overlay.innerHTML = `
+      <div class="modal-content" style="max-width:560px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;">
+            <h2>⚠️ Marcar como Condicional</h2>
+            <span class="close" onclick="cerrarMarcarCondicional()" style="color:white;">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:6px;"><strong>Estudiante:</strong> ${nombreEstudiante}</p>
+            <p style="margin-bottom:16px;color:#666;"><strong>Curso:</strong> ${curso || '-'} &nbsp;·&nbsp; <strong>Año:</strong> ${ANIO_ACTIVO || '-'}</p>
+            <form id="formCondicional" onsubmit="guardarCondicional(event)">
+                <input type="hidden" id="condNombre" value="${nombreEstudiante.replace(/"/g, '&quot;')}">
+                <input type="hidden" id="condCurso" value="${(curso || '').replace(/"/g, '&quot;')}">
+                <div class="form-group">
+                    <label>Motivo *</label>
+                    <textarea id="condMotivo" required rows="3" placeholder="Ej: Reincidencia en faltas graves durante el año anterior..." style="width:100%;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Faltas de referencia (año anterior)</label>
+                    <textarea id="condFaltasRef" rows="2" placeholder="Cargando resumen del año anterior..." style="width:100%;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Observaciones</label>
+                    <textarea id="condObs" rows="2" style="width:100%;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de registro</label>
+                    <input type="text" id="condFecha" value="${hoy}" style="width:100%;">
+                </div>
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button type="submit" class="btn btn-primary" style="background:#d97706;">💾 Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="cerrarMarcarCondicional()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    // Autollenar "faltas de referencia" desde el historial del año anterior
+    prefillFaltasReferencia(nombreEstudiante);
+}
+
+function cerrarMarcarCondicional() {
+    const m = document.getElementById('modalMarcarCondicional');
+    if (m) m.remove();
+}
+
+// Rellena el resumen del año anterior usando la comparativa por año ya existente
+async function prefillFaltasReferencia(nombre) {
+    try {
+        const datos = await obtenerComparativaAnual(nombre);
+        const ta = document.getElementById('condFaltasRef');
+        if (!ta || !Array.isArray(datos)) return;
+        let ref = null;
+        const idxActivo = datos.findIndex(d => d.anio === ANIO_ACTIVO);
+        if (idxActivo > 0) {
+            ref = datos[idxActivo - 1];
+        } else {
+            const previos = datos.filter(d => d.anio !== ANIO_ACTIVO && (d.leves + d.graves + d.muyGraves + d.tardanzas) > 0);
+            if (previos.length) ref = previos[previos.length - 1];
+        }
+        if (ref && (ref.leves + ref.graves + ref.muyGraves + ref.tardanzas) > 0) {
+            ta.value = `${ref.anio}: ${ref.leves} leves, ${ref.graves} graves, ${ref.muyGraves} muy graves, ${ref.tardanzas} tardanzas.`;
+        } else {
+            ta.placeholder = 'Sin datos del año anterior.';
+        }
+    } catch (e) {
+        const ta = document.getElementById('condFaltasRef');
+        if (ta) ta.placeholder = '';
+    }
+}
+
+async function guardarCondicional(event) {
+    event.preventDefault();
+    const nombre = document.getElementById('condNombre').value;
+    const curso = document.getElementById('condCurso').value;
+    const motivo = document.getElementById('condMotivo').value.trim();
+    const faltasRef = document.getElementById('condFaltasRef').value.trim();
+    const obs = document.getElementById('condObs').value.trim();
+    const fecha = document.getElementById('condFecha').value.trim();
+    if (!motivo) { alert('Indique el motivo.'); return; }
+
+    const registro = {
+        'Año Escolar': ANIO_ACTIVO,
+        'Nombre Estudiante': nombre,
+        'Curso': curso,
+        'Motivo': motivo,
+        'Faltas de referencia': faltasRef,
+        'Fecha registro': fecha,
+        'Estado': 'Vigente',
+        'Observaciones': obs,
+        'Registrado por': ''
+    };
+
+    const btn = event.submitter;
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+    try {
+        await enviarGoogleSheets(CONFIG.urlCondicionales, registro, 'agregar');
+        // Actualización optimista en memoria (la hoja ya lo tiene; se sincroniza al recargar la página)
+        datosCondicionales.push(registro);
+        cerrarMarcarCondicional();
+        refrescarVistasCondicional(nombre);
+        alert('✅ Estudiante marcado como condicional.');
+    } catch (e) {
+        console.error('Error al guardar condicional:', e);
+        alert('No se pudo guardar. Intenta de nuevo.');
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
+    }
+}
+
+// Levantar la condición (cambia Estado a "Levantado") desde el historial
+function levantarCondicionalDesde(nombre) {
+    const cond = esCondicional(nombre);
+    if (!cond) { alert('Este estudiante no tiene una condición vigente.'); return; }
+    levantarCondicional(datosCondicionales.indexOf(cond));
+}
+
+async function levantarCondicional(indice) {
+    if (indice < 0 || indice >= datosCondicionales.length) return;
+    if (!confirm('¿Levantar la condición de este estudiante? Su estado pasará a "Levantado".')) return;
+    const cond = datosCondicionales[indice];
+    const actualizado = Object.assign({}, cond, { 'Estado': 'Levantado' });
+    try {
+        await enviarGoogleSheets(CONFIG.urlCondicionales, actualizado, 'actualizar', indice);
+        datosCondicionales[indice] = actualizado; // optimista
+        const nombre = cond['Nombre Estudiante'] || cond.estudiante || '';
+        refrescarVistasCondicional(nombre);
+        if (document.getElementById('modalCondicionales')) verCondicionales();
+        alert('✅ Condición levantada.');
+    } catch (e) {
+        console.error('Error al levantar condicional:', e);
+        alert('No se pudo actualizar. Intenta de nuevo.');
+    }
+}
+
+// Refresca insignias/botones donde aparezca el estudiante
+function refrescarVistasCondicional(nombre) {
+    // Listado de estudiantes (si está abierto)
+    if (document.getElementById('bodyEstudiantes')) {
+        if (document.getElementById('buscarEst') && typeof buscarEstudiantes === 'function') {
+            buscarEstudiantes();
+        } else if (typeof cargarTablaEstudiantes === 'function') {
+            cargarTablaEstudiantes();
+        }
+    }
+    // Encabezado del historial (si está abierto)
+    const area = document.getElementById('condicionalHistorialArea');
+    if (area) {
+        const est = datosEstudiantes.find(x => (x['Nombre Completo'] || x.nombre || '').toLowerCase() === (nombre || '').toLowerCase());
+        const curso = est ? (est['Curso'] || est.curso || '') : '';
+        area.innerHTML = htmlCondicionalEncabezadoInner(nombre, curso);
+    }
+}
+
+// Vista de todos los condicionales del año activo
+function verCondicionales() {
+    const existente = document.getElementById('modalCondicionales');
+    if (existente) existente.remove();
+
+    const vigentes = datosCondicionales.filter(c => (c['Estado'] || c.estado || 'Vigente') === 'Vigente');
+    const filas = datosCondicionales.length ? datosCondicionales.map((c, i) => {
+        const nom = c['Nombre Estudiante'] || c.estudiante || '-';
+        const cur = c['Curso'] || c.curso || '-';
+        const mot = c['Motivo'] || c.motivo || '';
+        const fec = c['Fecha registro'] || c.fecha || '';
+        const est = c['Estado'] || c.estado || 'Vigente';
+        const colorEst = est === 'Vigente' ? '#f59e0b' : (est === 'Incumplido' ? '#dc2626' : '#16a34a');
+        const accion = est === 'Vigente'
+            ? `<button class="btn" style="background:#16a34a;color:white;padding:4px 10px;font-size:0.8em;" onclick="levantarCondicional(${i})">Levantar</button>`
+            : '';
+        return `<tr>
+            <td><strong>${nom}</strong></td>
+            <td>${cur}</td>
+            <td style="max-width:300px;">${mot}</td>
+            <td style="white-space:nowrap;">${fec}</td>
+            <td><span style="background:${colorEst};color:white;padding:3px 10px;border-radius:12px;font-size:0.8em;">${est}</span></td>
+            <td>${accion}</td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">No hay estudiantes condicionales registrados en el año activo.</td></tr>';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modalCondicionales';
+    overlay.className = 'modal';
+    overlay.style.cssText = 'display:block;z-index:2500;';
+    overlay.innerHTML = `
+      <div class="modal-content" style="max-width:920px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;">
+            <h2>⚠️ Estudiantes Condicionales · ${ANIO_ACTIVO || ''}</h2>
+            <span class="close" onclick="document.getElementById('modalCondicionales').remove()" style="color:white;">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:14px;color:#666;">Condicionales vigentes: <strong>${vigentes.length}</strong></p>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Nombre</th><th>Curso</th><th>Motivo</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
 }
 
 function cerrarHistorialEstudiante() {
@@ -8637,6 +8905,19 @@ async function cargarTodosDatosAlInicio() {
                     }
                 })
                 .catch(err => console.error('❌ Error cargando reuniones:', err))
+        );
+    }
+    
+    // Cargar Estudiantes Condicionales (año activo)
+    if (CONFIG.urlCondicionales) {
+        if (loadingText) loadingText.textContent = '📥 Cargando condicionales...';
+        promesas.push(
+            cargarDatosDesdeGoogleSheets(CONFIG.urlCondicionales)
+                .then(datos => {
+                    datosCondicionales = Array.isArray(datos) ? datos : [];
+                    console.log(`✅ ${datosCondicionales.length} condicionales cargados`);
+                })
+                .catch(err => console.error('❌ Error cargando condicionales:', err))
         );
     }
     
