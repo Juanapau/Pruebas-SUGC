@@ -6067,6 +6067,10 @@ function refrescarVistasCondicional(nombre) {
         const curso = est ? (est['Curso'] || est.curso || '') : '';
         area.innerHTML = htmlCondicionalEncabezadoInner(nombre, curso);
     }
+    // Vista de candidatos sugeridos (si está abierta)
+    if (document.getElementById('sugeridosContent') && typeof calcularSugeridos === 'function') {
+        calcularSugeridos();
+    }
 }
 
 // Vista de todos los condicionales del año activo
@@ -6108,6 +6112,9 @@ function verCondicionales() {
         </div>
         <div class="modal-body">
             <p style="margin-bottom:14px;color:#666;">Condicionales vigentes: <strong>${vigentes.length}</strong></p>
+            <div style="margin-bottom:14px;">
+                <button class="btn" style="background:#7c3aed;color:white;" onclick="abrirSugeridosCondicional()">💡 Candidatos sugeridos (año anterior)</button>
+            </div>
             <div class="table-container">
                 <table>
                     <thead><tr><th>Nombre</th><th>Curso</th><th>Motivo</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
@@ -6117,6 +6124,144 @@ function verCondicionales() {
         </div>
       </div>`;
     document.body.appendChild(overlay);
+}
+
+// ----- Candidatos sugeridos a condicional (según el año anterior) -----
+let _sugeridosCache = null; // { anio, mapa }
+
+// Año escolar inmediatamente anterior al activo (según ANIOS_DISPONIBLES)
+function anioAnterior() {
+    if (!Array.isArray(ANIOS_DISPONIBLES) || !ANIOS_DISPONIBLES.length) return null;
+    const orden = ANIOS_DISPONIBLES.slice().sort((a, b) => (parseInt(a, 10) || 0) - (parseInt(b, 10) || 0));
+    const idx = orden.indexOf(ANIO_ACTIVO);
+    if (idx > 0) return orden[idx - 1];
+    const previos = orden.filter(a => (parseInt(a, 10) || 0) < (parseInt(ANIO_ACTIVO, 10) || 0));
+    return previos.length ? previos[previos.length - 1] : null;
+}
+
+// Agrupa incidencias y tardanzas del año anterior por estudiante (con caché)
+async function cargarDatosAnioAnterior() {
+    const anio = anioAnterior();
+    if (!anio) return null;
+    if (_sugeridosCache && _sugeridosCache.anio === anio) return _sugeridosCache;
+
+    const tipoDe = (i) => (i['Tipo de falta'] || i['Tipo'] || i['Tipo de Falta'] || i.tipoFalta || i.tipo || '');
+    const nombreDe = (r) => (r['Nombre Estudiante'] || r.estudiante || '');
+    const cursoDe = (r) => (r['Curso'] || r.curso || '');
+
+    let inc = [], tar = [];
+    if (CONFIG.urlIncidencias) inc = await cargarDatosDesdeGoogleSheets(CONFIG.urlIncidencias + '&anio=' + encodeURIComponent(anio)) || [];
+    if (CONFIG.urlTardanzas) tar = await cargarDatosDesdeGoogleSheets(CONFIG.urlTardanzas + '&anio=' + encodeURIComponent(anio)) || [];
+
+    const mapa = {};
+    const ensure = (nombre, curso) => {
+        const k = (nombre || '').toLowerCase().trim();
+        if (!k) return null;
+        if (!mapa[k]) mapa[k] = { nombre: nombre, curso: curso || '', leves: 0, graves: 0, muyGraves: 0, tardanzas: 0 };
+        else if (!mapa[k].curso && curso) mapa[k].curso = curso;
+        return mapa[k];
+    };
+    inc.forEach(i => {
+        const m = ensure(nombreDe(i), cursoDe(i)); if (!m) return;
+        const t = tipoDe(i);
+        if (t === 'Leve') m.leves++;
+        else if (t === 'Grave') m.graves++;
+        else if (t === 'Muy Grave') m.muyGraves++;
+    });
+    tar.forEach(t => { const m = ensure(nombreDe(t), cursoDe(t)); if (m) m.tardanzas++; });
+
+    _sugeridosCache = { anio, mapa };
+    return _sugeridosCache;
+}
+
+function abrirSugeridosCondicional() {
+    const anio = anioAnterior();
+    const existente = document.getElementById('modalSugeridos');
+    if (existente) existente.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modalSugeridos';
+    overlay.className = 'modal';
+    overlay.style.cssText = 'display:block;z-index:2600;';
+    overlay.innerHTML = `
+      <div class="modal-content" style="max-width:940px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:white;">
+            <h2>💡 Candidatos a condicional</h2>
+            <span class="close" onclick="document.getElementById('modalSugeridos').remove()" style="color:white;">&times;</span>
+        </div>
+        <div class="modal-body">
+            ${anio ? `<p style="margin-bottom:14px;color:#555;">Según el comportamiento del año anterior (<strong>${anio}</strong>). Ajusta los umbrales y revisa los candidatos. La decisión de marcar es tuya.</p>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;">
+                <div class="form-group" style="margin:0;"><label>Muy Graves ≥</label><input type="number" id="umbralMuyGraves" value="1" min="0" style="width:90px;"></div>
+                <div class="form-group" style="margin:0;"><label>Graves ≥</label><input type="number" id="umbralGraves" value="3" min="0" style="width:90px;"></div>
+                <div class="form-group" style="margin:0;"><label>Tardanzas ≥</label><input type="number" id="umbralTardanzas" value="10" min="0" style="width:90px;"></div>
+                <button class="btn btn-primary" style="background:#7c3aed;" onclick="calcularSugeridos()">Calcular</button>
+            </div>
+            <div id="sugeridosContent"><p style="text-align:center;color:#999;padding:24px;">⏳ Calculando...</p></div>`
+            : `<p style="text-align:center;color:#999;padding:30px;">No hay un año escolar anterior con datos para generar sugerencias.</p>`}
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (anio) calcularSugeridos();
+}
+
+async function calcularSugeridos() {
+    const cont = document.getElementById('sugeridosContent');
+    if (!cont) return;
+    cont.innerHTML = '<p style="text-align:center;color:#999;padding:24px;">⏳ Calculando...</p>';
+    const uMG = parseInt(document.getElementById('umbralMuyGraves').value) || 0;
+    const uG = parseInt(document.getElementById('umbralGraves').value) || 0;
+    const uT = parseInt(document.getElementById('umbralTardanzas').value) || 0;
+
+    try {
+        const data = await cargarDatosAnioAnterior();
+        if (!data) { cont.innerHTML = '<p style="text-align:center;color:#999;padding:24px;">No hay año anterior con datos.</p>'; return; }
+
+        const candidatos = Object.values(data.mapa).filter(m =>
+            (uMG > 0 && m.muyGraves >= uMG) ||
+            (uG > 0 && m.graves >= uG) ||
+            (uT > 0 && m.tardanzas >= uT)
+        ).sort((a, b) => (b.muyGraves * 100 + b.graves * 10 + b.tardanzas) - (a.muyGraves * 100 + a.graves * 10 + a.tardanzas));
+
+        if (!candidatos.length) {
+            cont.innerHTML = '<p style="text-align:center;color:#16a34a;padding:24px;">Ningún estudiante supera los umbrales indicados.</p>';
+            return;
+        }
+
+        const filas = candidatos.map(m => {
+            const nEsc = m.nombre.replace(/'/g, "\\'");
+            const cEsc = (m.curso || '').replace(/'/g, "\\'");
+            const yaCond = condicionalDe(m.nombre);
+            const estado = yaCond ? (yaCond['Estado'] || yaCond.estado || 'Vigente') : null;
+            const razones = [];
+            if (uMG > 0 && m.muyGraves >= uMG) razones.push(`${m.muyGraves} muy graves`);
+            if (uG > 0 && m.graves >= uG) razones.push(`${m.graves} graves`);
+            if (uT > 0 && m.tardanzas >= uT) razones.push(`${m.tardanzas} tardanzas`);
+            const accion = estado
+                ? `<span style="color:#888;font-size:0.82em;">Ya: ${estado}</span>`
+                : `<button class="btn" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:4px 10px;font-size:0.8em;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
+            return `<tr>
+                <td><strong>${m.nombre}</strong></td>
+                <td>${m.curso || '-'}</td>
+                <td style="text-align:center;">${m.leves}</td>
+                <td style="text-align:center;color:#f97316;font-weight:600;">${m.graves}</td>
+                <td style="text-align:center;color:#dc2626;font-weight:600;">${m.muyGraves}</td>
+                <td style="text-align:center;">${m.tardanzas}</td>
+                <td style="font-size:0.82em;color:#555;">${razones.join(', ')}</td>
+                <td>${accion}</td>
+            </tr>`;
+        }).join('');
+
+        cont.innerHTML = `
+            <p style="margin-bottom:10px;color:#555;"><strong>${candidatos.length}</strong> candidato(s) según los umbrales.</p>
+            <div class="table-container"><table>
+                <thead><tr><th>Nombre</th><th>Curso</th><th>Leves</th><th>Graves</th><th>Muy Graves</th><th>Tardanzas</th><th>Motivo</th><th></th></tr></thead>
+                <tbody>${filas}</tbody>
+            </table></div>`;
+    } catch (e) {
+        console.error('Error al calcular sugeridos:', e);
+        cont.innerHTML = '<p style="text-align:center;color:#dc3545;padding:24px;">No se pudo calcular. Intenta de nuevo.</p>';
+    }
 }
 
 function cerrarHistorialEstudiante() {
