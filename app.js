@@ -6128,6 +6128,7 @@ function verCondicionales() {
 
 // ----- Candidatos sugeridos a condicional (según el año anterior) -----
 let _sugeridosCache = null; // { anio, mapa }
+let _ultimosSugeridos = null; // { anio, uMG, uG, uT, candidatos } para exportar
 
 // Año escolar inmediatamente anterior al activo (según ANIOS_DISPONIBLES)
 function anioAnterior() {
@@ -6196,6 +6197,7 @@ function abrirSugeridosCondicional() {
                 <div class="form-group" style="margin:0;"><label>Graves ≥</label><input type="number" id="umbralGraves" value="3" min="0" style="width:90px;"></div>
                 <div class="form-group" style="margin:0;"><label>Tardanzas ≥</label><input type="number" id="umbralTardanzas" value="10" min="0" style="width:90px;"></div>
                 <button class="btn btn-primary" style="background:#7c3aed;" onclick="calcularSugeridos()">Calcular</button>
+                <button class="btn" style="background:#16a34a;color:white;" onclick="exportarSugeridosPDF()">📥 Exportar PDF</button>
             </div>
             <div id="sugeridosContent"><p style="text-align:center;color:#999;padding:24px;">⏳ Calculando...</p></div>`
             : `<p style="text-align:center;color:#999;padding:30px;">No hay un año escolar anterior con datos para generar sugerencias.</p>`}
@@ -6222,6 +6224,8 @@ async function calcularSugeridos() {
             (uG > 0 && m.graves >= uG) ||
             (uT > 0 && m.tardanzas >= uT)
         ).sort((a, b) => (b.muyGraves * 100 + b.graves * 10 + b.tardanzas) - (a.muyGraves * 100 + a.graves * 10 + a.tardanzas));
+
+        _ultimosSugeridos = { anio: data.anio, uMG, uG, uT, candidatos };
 
         if (!candidatos.length) {
             cont.innerHTML = '<p style="text-align:center;color:#16a34a;padding:24px;">Ningún estudiante supera los umbrales indicados.</p>';
@@ -6262,6 +6266,60 @@ async function calcularSugeridos() {
         console.error('Error al calcular sugeridos:', e);
         cont.innerHTML = '<p style="text-align:center;color:#dc3545;padding:24px;">No se pudo calcular. Intenta de nuevo.</p>';
     }
+}
+
+// Exporta a PDF la lista de candidatos a condicional (misma data de la tabla + encabezado estándar)
+function exportarSugeridosPDF() {
+    if (!_ultimosSugeridos || !Array.isArray(_ultimosSugeridos.candidatos) || !_ultimosSugeridos.candidatos.length) {
+        alert('Primero calcula la lista de candidatos.');
+        return;
+    }
+    const { uMG, uG, uT, anio, candidatos } = _ultimosSugeridos;
+
+    const razonesDe = (m) => {
+        const r = [];
+        if (uMG > 0 && m.muyGraves >= uMG) r.push(`${m.muyGraves} muy graves`);
+        if (uG > 0 && m.graves >= uG) r.push(`${m.graves} graves`);
+        if (uT > 0 && m.tardanzas >= uT) r.push(`${m.tardanzas} tardanzas`);
+        return r.join(', ');
+    };
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const startY = agregarEncabezadoCENSA(doc, `Candidatos a Condicional ${ANIO_ACTIVO || ''}`);
+
+    const body = candidatos.map(m => [
+        m.nombre,
+        m.curso || '-',
+        m.leves,
+        m.graves,
+        m.muyGraves,
+        m.tardanzas,
+        razonesDe(m)
+    ]);
+
+    doc.autoTable({
+        startY: startY,
+        head: [['Nombre', 'Curso', 'Leves', 'Graves', 'Muy Graves', 'Tardanzas', 'Motivo']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [217, 119, 6] },
+        styles: { fontSize: 9 },
+        columnStyles: {
+            2: { halign: 'center' },
+            3: { halign: 'center' },
+            4: { halign: 'center' },
+            5: { halign: 'center' }
+        }
+    });
+
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(8);
+    doc.text(`Total de candidatos: ${candidatos.length}`, 14, finalY);
+    if (anio) doc.text(`Referencia de faltas: año escolar ${anio}`, 14, finalY + 5);
+    doc.text(`Generado el: ${new Date().toLocaleString('es-DO')}`, 14, finalY + 10);
+
+    doc.save(`Candidatos_Condicional_${ANIO_ACTIVO || ''}_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
 function cerrarHistorialEstudiante() {
