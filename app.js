@@ -35,7 +35,7 @@ const CONFIG_PREDETERMINADO = { ...CONFIG };
 let ANIO_ACTIVO = '';
 let ANIOS_DISPONIBLES = [];
 // Hojas cuyos datos se filtran y se sellan por año escolar
-const HOJAS_CON_ANIO = ['Incidencias', 'Tardanzas', 'Reuniones', 'Estudiantes', 'Condicionales'];
+const HOJAS_CON_ANIO = ['Incidencias', 'Tardanzas', 'Reuniones', 'Estudiantes'];
 
 // Lee la hoja Config y guarda el año activo y la lista de años disponibles
 async function cargarConfig() {
@@ -5780,6 +5780,12 @@ async function recargarCondicionales() {
     }
 }
 
+// ¿El registro pertenece al año escolar activo? (rows sin año se incluyen por compatibilidad)
+function esAnioActivo(c) {
+    const a = String(c['Año Escolar'] || c['Ano Escolar'] || c.anio || '').trim();
+    return a === '' || a === String(ANIO_ACTIVO || '');
+}
+
 // Devuelve el registro condicional VIGENTE del estudiante en el año activo, o null
 function esCondicional(nombreEstudiante) {
     if (!Array.isArray(datosCondicionales)) return null;
@@ -5787,7 +5793,7 @@ function esCondicional(nombreEstudiante) {
     return datosCondicionales.find(c => {
         const nom = (c['Nombre Estudiante'] || c.estudiante || '').toLowerCase().trim();
         const estado = (c['Estado'] || c.estado || 'Vigente');
-        return nom === nLC && estado === 'Vigente';
+        return nom === nLC && estado === 'Vigente' && esAnioActivo(c);
     }) || null;
 }
 
@@ -5796,7 +5802,7 @@ function esCondicional(nombreEstudiante) {
 function condicionalDe(nombreEstudiante) {
     if (!Array.isArray(datosCondicionales)) return null;
     const nLC = (nombreEstudiante || '').toLowerCase().trim();
-    const regs = datosCondicionales.filter(c => (c['Nombre Estudiante'] || c.estudiante || '').toLowerCase().trim() === nLC);
+    const regs = datosCondicionales.filter(c => (c['Nombre Estudiante'] || c.estudiante || '').toLowerCase().trim() === nLC && esAnioActivo(c));
     if (!regs.length) return null;
     return regs.find(c => (c['Estado'] || c.estado || 'Vigente') === 'Vigente')
         || regs.find(c => (c['Estado'] || c.estado) === 'Incumplido')
@@ -6098,8 +6104,9 @@ function verCondicionales() {
     const existente = document.getElementById('modalCondicionales');
     if (existente) existente.remove();
 
-    const vigentes = datosCondicionales.filter(c => (c['Estado'] || c.estado || 'Vigente') === 'Vigente');
-    const filas = datosCondicionales.length ? datosCondicionales.map((c, i) => {
+    const vigentes = datosCondicionales.filter(c => esAnioActivo(c) && (c['Estado'] || c.estado || 'Vigente') === 'Vigente');
+    const filasArr = datosCondicionales.map((c, i) => {
+        if (!esAnioActivo(c)) return '';
         const nom = c['Nombre Estudiante'] || c.estudiante || '-';
         const cur = c['Curso'] || c.curso || '-';
         const mot = c['Motivo'] || c.motivo || '';
@@ -6122,7 +6129,8 @@ function verCondicionales() {
                 </div>
             </td>
         </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No hay estudiantes condicionales registrados en el año activo.</td></tr>';
+    }).filter(Boolean);
+    const filas = filasArr.length ? filasArr.join('') : '<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No hay estudiantes condicionales registrados en el año activo.</td></tr>';
 
     const overlay = document.createElement('div');
     overlay.id = 'modalCondicionales';
@@ -9223,7 +9231,7 @@ async function cargarTodosDatosAlInicio() {
         );
     }
     
-    // Cargar Estudiantes Condicionales (año activo)
+    // Cargar Estudiantes Condicionales (todas las filas; se filtra por año en memoria)
     if (CONFIG.urlCondicionales) {
         if (loadingText) loadingText.textContent = '📥 Cargando condicionales...';
         promesas.push(
