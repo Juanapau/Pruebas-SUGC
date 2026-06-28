@@ -5761,6 +5761,15 @@ function dibujarComparativaAnualPDF(doc, datos, yPos) {
 // ============================================================
 let datosCondicionales = [];
 
+// Aviso breve con el cuadro propio del sistema (cabecera verde, botón Aceptar)
+function avisoCondicional(mensaje, titulo = 'Aviso') {
+    if (typeof mostrarModalConfirmacion === 'function') {
+        mostrarModalConfirmacion(titulo, mensaje, false, null, 'Aceptar');
+    } else {
+        alert(mensaje);
+    }
+}
+
 async function recargarCondicionales() {
     if (!CONFIG.urlCondicionales) return;
     try {
@@ -5834,7 +5843,7 @@ function filaEstudianteHTML(e) {
     } else if (estado === 'Levantado') {
         estadoCell = `<span style="background:#16a34a;color:white;font-weight:700;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">Levantado</span>`;
     } else {
-        estadoCell = `<button class="btn" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:4px 10px;font-size:0.8em;white-space:nowrap;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
+        estadoCell = `<button class="btn btn-primary" style="padding:4px 12px;font-size:0.8em;margin:0;white-space:nowrap;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
     }
     return `
         <tr>
@@ -5852,7 +5861,7 @@ function abrirMarcarCondicional(nombreEstudiante, cursoEstudiante) {
         curso = est ? (est['Curso'] || est.curso || '') : '';
     }
     if (esCondicional(nombreEstudiante)) {
-        alert('Este estudiante ya está marcado como condicional en el año activo.');
+        avisoCondicional('Este estudiante ya está marcado como condicional en el año activo.');
         return;
     }
     const hoy = new Date().toLocaleDateString('es-DO');
@@ -5865,7 +5874,7 @@ function abrirMarcarCondicional(nombreEstudiante, cursoEstudiante) {
     overlay.style.cssText = 'display:block;z-index:3000;';
     overlay.innerHTML = `
       <div class="modal-content" style="max-width:560px;">
-        <div class="modal-header" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #059669 0%, #047857 100%);color:white;">
             <h2>⚠️ Marcar como Condicional</h2>
             <span class="close" onclick="cerrarMarcarCondicional()" style="color:white;">&times;</span>
         </div>
@@ -5892,7 +5901,7 @@ function abrirMarcarCondicional(nombreEstudiante, cursoEstudiante) {
                     <input type="text" id="condFecha" value="${hoy}" style="width:100%;">
                 </div>
                 <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button type="submit" class="btn btn-primary" style="background:#d97706;">💾 Guardar</button>
+                    <button type="submit" class="btn btn-primary">💾 Guardar</button>
                     <button type="button" class="btn btn-secondary" onclick="cerrarMarcarCondicional()">Cancelar</button>
                 </div>
             </form>
@@ -5942,7 +5951,7 @@ async function guardarCondicional(event) {
     const faltasRef = document.getElementById('condFaltasRef').value.trim();
     const obs = document.getElementById('condObs').value.trim();
     const fecha = document.getElementById('condFecha').value.trim();
-    if (!motivo) { alert('Indique el motivo.'); return; }
+    if (!motivo) { avisoCondicional('Indique el motivo.'); return; }
 
     const registro = {
         'Año Escolar': ANIO_ACTIVO,
@@ -5965,10 +5974,10 @@ async function guardarCondicional(event) {
         datosCondicionales.push(registro);
         cerrarMarcarCondicional();
         refrescarVistasCondicional(nombre);
-        alert('✅ Estudiante marcado como condicional.');
+        mostrarNotificacionToast('✅ Estudiante marcado como condicional.');
     } catch (e) {
         console.error('Error al guardar condicional:', e);
-        alert('No se pudo guardar. Intenta de nuevo.');
+        avisoCondicional('No se pudo guardar. Intenta de nuevo.');
         if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar'; }
     }
 }
@@ -5976,13 +5985,13 @@ async function guardarCondicional(event) {
 // Levantar la condición (cambia Estado a "Levantado") desde el historial
 function levantarCondicionalDesde(nombre) {
     const cond = esCondicional(nombre);
-    if (!cond) { alert('Este estudiante no tiene una condición vigente.'); return; }
+    if (!cond) { avisoCondicional('Este estudiante no tiene una condición vigente.'); return; }
     levantarCondicional(datosCondicionales.indexOf(cond));
 }
 
 function marcarIncumplidoDesde(nombre) {
     const cond = esCondicional(nombre);
-    if (!cond) { alert('Este estudiante no tiene una condición vigente.'); return; }
+    if (!cond) { avisoCondicional('Este estudiante no tiene una condición vigente.'); return; }
     marcarIncumplido(datosCondicionales.indexOf(cond));
 }
 
@@ -6000,21 +6009,23 @@ async function cambiarEstadoCondicional(indice, nuevoEstado) {
         return true;
     } catch (e) {
         console.error('Error al cambiar estado condicional:', e);
-        alert('No se pudo actualizar. Intenta de nuevo.');
+        avisoCondicional('No se pudo actualizar. Intenta de nuevo.');
         return false;
     }
 }
 
-async function levantarCondicional(indice) {
+function levantarCondicional(indice) {
     if (indice < 0 || indice >= datosCondicionales.length) return;
-    if (!confirm('¿Levantar la condición de este estudiante? Su estado pasará a "Levantado".')) return;
-    if (await cambiarEstadoCondicional(indice, 'Levantado')) alert('✅ Condición levantada.');
+    mostrarModalConfirmacion('Levantar condición', '¿Levantar la condición de este estudiante? Su estado pasará a "Levantado".', true, async () => {
+        if (await cambiarEstadoCondicional(indice, 'Levantado')) mostrarNotificacionToast('✅ Condición levantada.');
+    }, 'Levantar');
 }
 
-async function marcarIncumplido(indice) {
+function marcarIncumplido(indice) {
     if (indice < 0 || indice >= datosCondicionales.length) return;
-    if (!confirm('¿Marcar la condición como INCUMPLIDA para este estudiante?')) return;
-    if (await cambiarEstadoCondicional(indice, 'Incumplido')) alert('✅ Estado actualizado a "Incumplido".');
+    mostrarModalConfirmacion('Marcar incumplido', '¿Marcar la condición como INCUMPLIDA para este estudiante?', true, async () => {
+        if (await cambiarEstadoCondicional(indice, 'Incumplido')) mostrarNotificacionToast('✅ Estado actualizado a "Incumplido".');
+    }, 'Marcar incumplido');
 }
 
 // Aviso al registrar una incidencia a un estudiante condicional vigente (Fase 2)
@@ -6033,7 +6044,7 @@ function alertarCondicionalIncidencia(nombre, gravedad) {
     overlay.style.cssText = 'display:block;z-index:3200;';
     overlay.innerHTML = `
       <div class="modal-content" style="max-width:520px;">
-        <div class="modal-header" style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #059669 0%, #047857 100%);color:white;">
             <h2>⚠️ Estudiante Condicional</h2>
             <span class="close" onclick="document.getElementById('modalAvisoCondicional').remove()" style="color:white;">&times;</span>
         </div>
@@ -6042,7 +6053,7 @@ function alertarCondicionalIncidencia(nombre, gravedad) {
             <p style="margin-bottom:16px;color:#555;">Acabas de registrarle una incidencia${grav ? ' <strong>' + grav + '</strong>' : ''}. Esto podría implicar el <strong>incumplimiento</strong> de su condición. Revisa y decide si corresponde marcarla como incumplida.</p>
             ${motivo ? `<p style="margin-bottom:16px;color:#555;"><strong>Motivo de la condición:</strong> ${motivo}</p>` : ''}
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                <button class="btn" style="background:#dc2626;color:white;" onclick="document.getElementById('modalAvisoCondicional').remove(); marcarIncumplido(${idx});">Marcar Incumplido</button>
+                <button class="btn btn-primary" onclick="document.getElementById('modalAvisoCondicional').remove(); marcarIncumplido(${idx});">Marcar Incumplido</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('modalAvisoCondicional').remove()">Continuar sin marcar</button>
             </div>
         </div>
@@ -6095,19 +6106,23 @@ function verCondicionales() {
         const fec = formatearFechaCorta(c['Fecha registro'] || c.fecha || '');
         const est = c['Estado'] || c.estado || 'Vigente';
         const colorEst = est === 'Vigente' ? '#f59e0b' : (est === 'Incumplido' ? '#dc2626' : '#16a34a');
-        const accion = est === 'Vigente'
-            ? `<button class="btn" style="background:#16a34a;color:white;padding:4px 10px;font-size:0.8em;margin-right:4px;" onclick="levantarCondicional(${i})">Levantar</button>
-               <button class="btn" style="background:#dc2626;color:white;padding:4px 10px;font-size:0.8em;" onclick="marcarIncumplido(${i})">Incumplido</button>`
+        const acciones = est === 'Vigente'
+            ? `<button class="btn btn-success" style="padding:4px 12px;font-size:0.8em;margin:0;" onclick="levantarCondicional(${i})">Levantar</button>
+               <button class="btn btn-primary" style="padding:4px 12px;font-size:0.8em;margin:0;" onclick="marcarIncumplido(${i})">Incumplido</button>`
             : '';
         return `<tr>
-            <td><strong>${nom}</strong></td>
-            <td>${cur}</td>
-            <td style="max-width:300px;">${mot}</td>
-            <td style="white-space:nowrap;">${fec}</td>
-            <td><span style="background:${colorEst};color:white;padding:3px 10px;border-radius:12px;font-size:0.8em;">${est}</span></td>
-            <td>${accion}</td>
+            <td style="vertical-align:middle;"><strong>${nom}</strong></td>
+            <td style="vertical-align:middle;">${cur}</td>
+            <td style="max-width:300px;vertical-align:middle;">${mot}</td>
+            <td style="white-space:nowrap;vertical-align:middle;">${fec}</td>
+            <td style="vertical-align:middle;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="background:${colorEst};color:white;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">${est}</span>
+                    ${acciones}
+                </div>
+            </td>
         </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center;padding:30px;color:#999;">No hay estudiantes condicionales registrados en el año activo.</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:30px;color:#999;">No hay estudiantes condicionales registrados en el año activo.</td></tr>';
 
     const overlay = document.createElement('div');
     overlay.id = 'modalCondicionales';
@@ -6115,18 +6130,18 @@ function verCondicionales() {
     overlay.style.cssText = 'display:block;z-index:2500;';
     overlay.innerHTML = `
       <div class="modal-content" style="max-width:920px;">
-        <div class="modal-header" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #059669 0%, #047857 100%);color:white;">
             <h2>⚠️ Estudiantes Condicionales · ${ANIO_ACTIVO || ''}</h2>
             <span class="close" onclick="document.getElementById('modalCondicionales').remove()" style="color:white;">&times;</span>
         </div>
         <div class="modal-body">
             <p style="margin-bottom:14px;color:#666;">Condicionales vigentes: <strong>${vigentes.length}</strong></p>
             <div style="margin-bottom:14px;">
-                <button class="btn" style="background:#7c3aed;color:white;" onclick="abrirSugeridosCondicional()">💡 Candidatos sugeridos (año anterior)</button>
+                <button class="btn btn-primary" onclick="abrirSugeridosCondicional()">💡 Candidatos sugeridos (año anterior)</button>
             </div>
             <div class="table-container">
                 <table>
-                    <thead><tr><th>Nombre</th><th>Curso</th><th>Motivo</th><th>Fecha</th><th>Estado</th><th></th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Curso</th><th>Motivo</th><th>Fecha</th><th>Estado</th></tr></thead>
                     <tbody>${filas}</tbody>
                 </table>
             </div>
@@ -6195,7 +6210,7 @@ function abrirSugeridosCondicional() {
     overlay.style.cssText = 'display:block;z-index:2600;';
     overlay.innerHTML = `
       <div class="modal-content" style="max-width:940px;">
-        <div class="modal-header" style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:white;">
+        <div class="modal-header" style="background:linear-gradient(135deg, #059669 0%, #047857 100%);color:white;">
             <h2>💡 Candidatos a condicional</h2>
             <span class="close" onclick="document.getElementById('modalSugeridos').remove()" style="color:white;">&times;</span>
         </div>
@@ -6205,8 +6220,8 @@ function abrirSugeridosCondicional() {
                 <div class="form-group" style="margin:0;"><label>Muy Graves ≥</label><input type="number" id="umbralMuyGraves" value="1" min="0" style="width:90px;"></div>
                 <div class="form-group" style="margin:0;"><label>Graves ≥</label><input type="number" id="umbralGraves" value="3" min="0" style="width:90px;"></div>
                 <div class="form-group" style="margin:0;"><label>Tardanzas ≥</label><input type="number" id="umbralTardanzas" value="10" min="0" style="width:90px;"></div>
-                <button class="btn btn-primary" style="background:#7c3aed;" onclick="calcularSugeridos()">Calcular</button>
-                <button class="btn" style="background:#16a34a;color:white;" onclick="exportarSugeridosPDF()">📥 Exportar PDF</button>
+                <button class="btn btn-primary" onclick="calcularSugeridos()">Calcular</button>
+                <button class="btn btn-success" onclick="exportarSugeridosPDF()">📥 Exportar PDF</button>
             </div>
             <div id="sugeridosContent"><p style="text-align:center;color:#999;padding:24px;">⏳ Calculando...</p></div>`
             : `<p style="text-align:center;color:#999;padding:30px;">No hay un año escolar anterior con datos para generar sugerencias.</p>`}
@@ -6252,7 +6267,7 @@ async function calcularSugeridos() {
             if (uT > 0 && m.tardanzas >= uT) razones.push(`${m.tardanzas} tardanzas`);
             const accion = estado
                 ? `<span style="color:#888;font-size:0.82em;">Ya: ${estado}</span>`
-                : `<button class="btn" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:4px 10px;font-size:0.8em;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
+                : `<button class="btn btn-primary" style="padding:4px 12px;font-size:0.8em;margin:0;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
             return `<tr>
                 <td><strong>${m.nombre}</strong></td>
                 <td>${m.curso || '-'}</td>
@@ -6280,7 +6295,7 @@ async function calcularSugeridos() {
 // Exporta a PDF la lista de candidatos a condicional (misma data de la tabla + encabezado estándar)
 function exportarSugeridosPDF() {
     if (!_ultimosSugeridos || !Array.isArray(_ultimosSugeridos.candidatos) || !_ultimosSugeridos.candidatos.length) {
-        alert('Primero calcula la lista de candidatos.');
+        avisoCondicional('Primero calcula la lista de candidatos.');
         return;
     }
     const { uMG, uG, uT, anio, candidatos } = _ultimosSugeridos;
