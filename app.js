@@ -854,6 +854,11 @@ const inc = {
             const curso = inc['Curso'] || inc['curso'] || '';
             notificarNuevaIncidencia(estudiante, tipoFalta, tipoConducta, docente, curso);
         }
+
+        // Fase 2: si el estudiante está condicional vigente, avisar y ofrecer marcar Incumplido
+        if (typeof alertarCondicionalIncidencia === 'function') {
+            alertarCondicionalIncidencia(inc['Nombre Estudiante'], inc['Tipo de falta']);
+        }
     }
     
     document.getElementById('formIncidencia').reset();
@@ -5777,15 +5782,36 @@ function esCondicional(nombreEstudiante) {
     }) || null;
 }
 
+// Devuelve el registro condicional más relevante del estudiante en el año activo
+// (prioriza Vigente, luego Incumplido, luego el último), o null
+function condicionalDe(nombreEstudiante) {
+    if (!Array.isArray(datosCondicionales)) return null;
+    const nLC = (nombreEstudiante || '').toLowerCase().trim();
+    const regs = datosCondicionales.filter(c => (c['Nombre Estudiante'] || c.estudiante || '').toLowerCase().trim() === nLC);
+    if (!regs.length) return null;
+    return regs.find(c => (c['Estado'] || c.estado || 'Vigente') === 'Vigente')
+        || regs.find(c => (c['Estado'] || c.estado) === 'Incumplido')
+        || regs[regs.length - 1];
+}
+
 // Insignia + botón para el encabezado del historial (contenido interno, sin el div contenedor)
 function htmlCondicionalEncabezadoInner(nombre, curso) {
     const nEsc = (nombre || '').replace(/'/g, "\\'");
     const cEsc = (curso || '').replace(/'/g, "\\'");
-    if (esCondicional(nombre)) {
-        return `<div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    const cond = condicionalDe(nombre);
+    const estado = cond ? (cond['Estado'] || cond.estado || 'Vigente') : null;
+    if (estado === 'Vigente') {
+        return `<div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                     <span style="background:#f59e0b;color:#1a1a1a;font-weight:700;padding:6px 14px;border-radius:20px;font-size:0.95em;">⚠️ CONDICIONAL</span>
                     <button class="btn" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);padding:6px 14px;font-size:0.85em;" onclick="levantarCondicionalDesde('${nEsc}')">Levantar condición</button>
+                    <button class="btn" style="background:rgba(220,38,38,0.85);color:white;border:1px solid rgba(255,255,255,0.4);padding:6px 14px;font-size:0.85em;" onclick="marcarIncumplidoDesde('${nEsc}')">Marcar incumplido</button>
                 </div>`;
+    }
+    if (estado === 'Incumplido') {
+        return `<div style="margin-top:12px;"><span style="background:#dc2626;color:white;font-weight:700;padding:6px 14px;border-radius:20px;font-size:0.95em;">⚠️ CONDICIONAL · INCUMPLIDO</span></div>`;
+    }
+    if (estado === 'Levantado') {
+        return `<div style="margin-top:12px;"><span style="background:#16a34a;color:white;font-weight:700;padding:6px 14px;border-radius:20px;font-size:0.95em;">✓ Condición levantada</span></div>`;
     }
     return `<div style="margin-top:12px;">
                 <button class="btn" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);padding:6px 14px;font-size:0.9em;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">⚠️ Marcar como condicional</button>
@@ -5798,9 +5824,18 @@ function filaEstudianteHTML(e) {
     const curso = e['Curso'] || e.curso || '-';
     const nEsc = nombre.replace(/'/g, "\\'");
     const cEsc = (curso === '-' ? '' : curso).replace(/'/g, "\\'");
-    const estadoCell = esCondicional(nombre)
-        ? `<span style="background:#f59e0b;color:#1a1a1a;font-weight:700;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">⚠️ Condicional</span>`
-        : `<button class="btn" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:4px 10px;font-size:0.8em;white-space:nowrap;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
+    const cond = condicionalDe(nombre);
+    const estado = cond ? (cond['Estado'] || cond.estado || 'Vigente') : null;
+    let estadoCell;
+    if (estado === 'Vigente') {
+        estadoCell = `<span style="background:#f59e0b;color:#1a1a1a;font-weight:700;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">⚠️ Condicional</span>`;
+    } else if (estado === 'Incumplido') {
+        estadoCell = `<span style="background:#dc2626;color:white;font-weight:700;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">Incumplido</span>`;
+    } else if (estado === 'Levantado') {
+        estadoCell = `<span style="background:#16a34a;color:white;font-weight:700;padding:3px 10px;border-radius:12px;font-size:0.8em;white-space:nowrap;">Levantado</span>`;
+    } else {
+        estadoCell = `<button class="btn" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;padding:4px 10px;font-size:0.8em;white-space:nowrap;" onclick="abrirMarcarCondicional('${nEsc}','${cEsc}')">Marcar condicional</button>`;
+    }
     return `
         <tr>
             <td><strong>${nombre}</strong></td>
@@ -5945,22 +5980,74 @@ function levantarCondicionalDesde(nombre) {
     levantarCondicional(datosCondicionales.indexOf(cond));
 }
 
-async function levantarCondicional(indice) {
-    if (indice < 0 || indice >= datosCondicionales.length) return;
-    if (!confirm('¿Levantar la condición de este estudiante? Su estado pasará a "Levantado".')) return;
+function marcarIncumplidoDesde(nombre) {
+    const cond = esCondicional(nombre);
+    if (!cond) { alert('Este estudiante no tiene una condición vigente.'); return; }
+    marcarIncumplido(datosCondicionales.indexOf(cond));
+}
+
+// Cambia el Estado de un registro condicional (Vigente/Levantado/Incumplido)
+async function cambiarEstadoCondicional(indice, nuevoEstado) {
+    if (indice < 0 || indice >= datosCondicionales.length) return false;
     const cond = datosCondicionales[indice];
-    const actualizado = Object.assign({}, cond, { 'Estado': 'Levantado' });
+    const actualizado = Object.assign({}, cond, { 'Estado': nuevoEstado });
     try {
         await enviarGoogleSheets(CONFIG.urlCondicionales, actualizado, 'actualizar', indice);
         datosCondicionales[indice] = actualizado; // optimista
         const nombre = cond['Nombre Estudiante'] || cond.estudiante || '';
         refrescarVistasCondicional(nombre);
         if (document.getElementById('modalCondicionales')) verCondicionales();
-        alert('✅ Condición levantada.');
+        return true;
     } catch (e) {
-        console.error('Error al levantar condicional:', e);
+        console.error('Error al cambiar estado condicional:', e);
         alert('No se pudo actualizar. Intenta de nuevo.');
+        return false;
     }
+}
+
+async function levantarCondicional(indice) {
+    if (indice < 0 || indice >= datosCondicionales.length) return;
+    if (!confirm('¿Levantar la condición de este estudiante? Su estado pasará a "Levantado".')) return;
+    if (await cambiarEstadoCondicional(indice, 'Levantado')) alert('✅ Condición levantada.');
+}
+
+async function marcarIncumplido(indice) {
+    if (indice < 0 || indice >= datosCondicionales.length) return;
+    if (!confirm('¿Marcar la condición como INCUMPLIDA para este estudiante?')) return;
+    if (await cambiarEstadoCondicional(indice, 'Incumplido')) alert('✅ Estado actualizado a "Incumplido".');
+}
+
+// Aviso al registrar una incidencia a un estudiante condicional vigente (Fase 2)
+function alertarCondicionalIncidencia(nombre, gravedad) {
+    const cond = esCondicional(nombre);
+    if (!cond) return;
+    const idx = datosCondicionales.indexOf(cond);
+    const grav = gravedad || '';
+    const motivo = cond['Motivo'] || cond.motivo || '';
+    const existente = document.getElementById('modalAvisoCondicional');
+    if (existente) existente.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modalAvisoCondicional';
+    overlay.className = 'modal';
+    overlay.style.cssText = 'display:block;z-index:3200;';
+    overlay.innerHTML = `
+      <div class="modal-content" style="max-width:520px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#dc2626,#991b1b);color:white;">
+            <h2>⚠️ Estudiante Condicional</h2>
+            <span class="close" onclick="document.getElementById('modalAvisoCondicional').remove()" style="color:white;">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:12px;"><strong>${nombre}</strong> está marcado como <strong>CONDICIONAL</strong> este año escolar.</p>
+            <p style="margin-bottom:16px;color:#555;">Acabas de registrarle una incidencia${grav ? ' <strong>' + grav + '</strong>' : ''}. Esto podría implicar el <strong>incumplimiento</strong> de su condición. Revisa y decide si corresponde marcarla como incumplida.</p>
+            ${motivo ? `<p style="margin-bottom:16px;color:#555;"><strong>Motivo de la condición:</strong> ${motivo}</p>` : ''}
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn" style="background:#dc2626;color:white;" onclick="document.getElementById('modalAvisoCondicional').remove(); marcarIncumplido(${idx});">Marcar Incumplido</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('modalAvisoCondicional').remove()">Continuar sin marcar</button>
+            </div>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
 }
 
 // Refresca insignias/botones donde aparezca el estudiante
@@ -5996,7 +6083,8 @@ function verCondicionales() {
         const est = c['Estado'] || c.estado || 'Vigente';
         const colorEst = est === 'Vigente' ? '#f59e0b' : (est === 'Incumplido' ? '#dc2626' : '#16a34a');
         const accion = est === 'Vigente'
-            ? `<button class="btn" style="background:#16a34a;color:white;padding:4px 10px;font-size:0.8em;" onclick="levantarCondicional(${i})">Levantar</button>`
+            ? `<button class="btn" style="background:#16a34a;color:white;padding:4px 10px;font-size:0.8em;margin-right:4px;" onclick="levantarCondicional(${i})">Levantar</button>
+               <button class="btn" style="background:#dc2626;color:white;padding:4px 10px;font-size:0.8em;" onclick="marcarIncumplido(${i})">Incumplido</button>`
             : '';
         return `<tr>
             <td><strong>${nom}</strong></td>
