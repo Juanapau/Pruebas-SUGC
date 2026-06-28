@@ -6074,6 +6074,15 @@ function refrescarVistasCondicional(nombre) {
 }
 
 // Vista de todos los condicionales del año activo
+// Convierte una fecha (ISO o texto) a formato corto d/m/aaaa, sin desfase de zona horaria
+function formatearFechaCorta(valor) {
+    if (!valor) return '';
+    const s = String(valor).trim();
+    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${parseInt(m[3], 10)}/${parseInt(m[2], 10)}/${m[1]}`;
+    return s;
+}
+
 function verCondicionales() {
     const existente = document.getElementById('modalCondicionales');
     if (existente) existente.remove();
@@ -6083,7 +6092,7 @@ function verCondicionales() {
         const nom = c['Nombre Estudiante'] || c.estudiante || '-';
         const cur = c['Curso'] || c.curso || '-';
         const mot = c['Motivo'] || c.motivo || '';
-        const fec = c['Fecha registro'] || c.fecha || '';
+        const fec = formatearFechaCorta(c['Fecha registro'] || c.fecha || '');
         const est = c['Estado'] || c.estado || 'Vigente';
         const colorEst = est === 'Vigente' ? '#f59e0b' : (est === 'Incumplido' ? '#dc2626' : '#16a34a');
         const accion = est === 'Vigente'
