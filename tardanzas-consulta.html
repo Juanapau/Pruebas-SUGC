@@ -175,7 +175,7 @@ pointer-events: auto !important;
 cursor: pointer !important;
 }
 
-.table-container { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.table-container { overflow-x: auto; overflow-y: auto; max-height: 75vh; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
 table { width: 100%; border-collapse: collapse; background: white; }
 
@@ -186,6 +186,9 @@ padding: 15px 12px;
 text-align: left;
 font-weight: 600;
 font-size: 0.9em;
+position: sticky;
+top: 0;
+z-index: 5;
 }
 
 table td { padding: 12px; border-bottom: 1px solid #eee; font-size: 0.9em; }
