@@ -278,6 +278,15 @@ header { flex-direction: column; text-align: center; }
         body.dark-mode .modal-content p,
         body.dark-mode .modal-content label,
         body.dark-mode .modal-content strong { color: #f1f5f9; }
+        /* Filas de tardanzas (mismos colores que el modal del sistema principal) */
+        body.dark-mode tr.fila-advertencia { background: #2d2a1d !important; }
+        body.dark-mode tr.fila-advertencia:hover { background: #3a3626 !important; }
+        body.dark-mode tr.fila-advertencia td { color: #e7e3d4 !important; }
+        body.dark-mode tr.fila-peligro { background: #322029 !important; }
+        body.dark-mode tr.fila-peligro:hover { background: #3f2833 !important; }
+        body.dark-mode tr.fila-peligro td { color: #ecd9dd !important; }
+        body.dark-mode .badge-warning { background: #2d2a1d; color: #e7e3d4; }
+        body.dark-mode .badge-danger { background: #322029; color: #ecd9dd; }
         body.dark-mode .alert-readonly {
             background: linear-gradient(135deg, #422006 0%, #78350f 100%);
             border-color: #b45309;
