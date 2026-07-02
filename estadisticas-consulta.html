@@ -306,6 +306,36 @@ header { flex-direction: column; text-align: center; }
             background: #1e293b !important;
             color: #e2e8f0;
         }
+        /* Estadísticas: mismos colores que el sistema principal */
+        body.dark-mode .stat-card { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        body.dark-mode .stat-card .number { color: #4a9eff; }
+        body.dark-mode .stat-card .label { color: #94a3b8; }
+        body.dark-mode .detail-label { color: #94a3b8; }
+        body.dark-mode .detail-value { color: #4a9eff; }
+        body.dark-mode .breakdown-text { color: #cbd5e1; }
+        body.dark-mode .breakdown-text strong { color: #f1f5f9; }
+        body.dark-mode .info-message { color: #94a3b8; }
+        body.dark-mode .info-message h3 { color: #f1f5f9; }
+        /* Cajas con gradiente claro (Historial de Conductas y resúmenes) → oscuro */
+        body.dark-mode .content-card [style*="linear-gradient(135deg, #fee2e2"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg, #fef3c7"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg, #d1fae5"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg, #dbeafe"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg,#dcfce7"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg,#fef9c3"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg,#fee2e2"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg,#ede9fe"],
+        body.dark-mode .content-card [style*="linear-gradient(135deg,#e0f2fe"] {
+            background: #0f172a !important;
+            border-color: #334155 !important;
+        }
+        /* Azul oscuro de títulos/números → azul claro legible */
+        body.dark-mode [style*="color:#1e3a5f"] { color: #60a5fa !important; }
+        /* Textos oscuros en línea → claros */
+        body.dark-mode .content-card [style*="color:#333"] { color: #f1f5f9 !important; }
+        body.dark-mode .content-card [style*="color:#666"] { color: #94a3b8 !important; }
+        body.dark-mode .content-card [style*="color:#555"] { color: #cbd5e1 !important; }
+        body.dark-mode .content-card [style*="#e5e7eb"] { border-color: #334155 !important; }
         /* Botón de tema en el encabezado */
         .btn-tema {
             margin-left: auto;
