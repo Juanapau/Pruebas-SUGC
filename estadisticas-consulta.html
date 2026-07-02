@@ -317,6 +317,9 @@ header { flex-direction: column; text-align: center; }
         /* Textos del gráfico SVG (valores y nombres de curso) sobre el fondo oscuro */
         body.dark-mode #graficoCursosContainer text[fill="#555"],
         body.dark-mode #graficoCursosContainer text[fill="#374151"] { fill: #cbd5e1 !important; }
+        /* Filas alternas de la tabla de cursos → oscuras (como el sistema principal) */
+        body.dark-mode #tablaCursosBody tr[style*="background:white"] { background: #1e293b !important; }
+        body.dark-mode #tablaCursosBody tr[style*="background:#f9fafb"] { background: #243044 !important; }
         /* Botón de tema en el encabezado */
         .btn-tema {
             margin-left: auto;
