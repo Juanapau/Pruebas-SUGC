@@ -384,9 +384,45 @@ grid-template-columns: 1fr;
 grid-column: auto;
 }
 }
-</style>
+
+        /* ================= MODO OSCURO (dashboard consulta) ================= */
+        body.dark-mode .user-bar { background: #1e293b; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+        body.dark-mode .user-details-bar h3 { color: #f1f5f9; }
+        body.dark-mode #filtroAnioConsulta { background: #0f172a; color: #f1f5f9; border-color: #334155; }
+        body.dark-mode #filtroAnioConsulta option { background: #1e293b; color: #f1f5f9; }
+        body.dark-mode .module-card { background: #1e293b; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+        body.dark-mode .module-card:hover { border-top-color: #4a9eff; }
+        body.dark-mode .module-info h3 { color: #f1f5f9; }
+        body.dark-mode .module-info p { color: #94a3b8; }
+        body.dark-mode .module-stats { border-top-color: #334155; }
+        body.dark-mode .stat-item .label { color: #94a3b8; }
+        body.dark-mode .modal-confirm { background: #1e293b; color: #e2e8f0; }
+        body.dark-mode .modal-confirm h1,
+        body.dark-mode .modal-confirm h2,
+        body.dark-mode .modal-confirm h3,
+        body.dark-mode .modal-confirm p { color: #f1f5f9; }
+        /* Botón de tema */
+        .btn-tema {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            font-size: 1.15em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .btn-tema:hover { background: rgba(255,255,255,0.28); transform: translateY(-2px); }
+
+    </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem("censaTema")==="oscuro")document.body.classList.add("dark-mode");}catch(e){}</script>
+
 
 <div class="container">
 <!-- HEADER -->
@@ -417,6 +453,7 @@ grid-column: auto;
 <option value="">Cargando...</option>
 </select>
 </div>
+<button class="btn-tema" onclick="toggleTema()" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
 <button class="btn-logout" onclick="mostrarConfirmacionSalir()">
 🚪 Salir
 </button>
@@ -926,6 +963,20 @@ cerrarModal();
 }
 
 console.log('📊 Sistema de consulta cargado');
+</script>
+
+
+<script>
+function toggleTema(){
+    const oscuro = document.body.classList.toggle('dark-mode');
+    try{ localStorage.setItem('censaTema', oscuro ? 'oscuro' : 'claro'); }catch(e){}
+    const b = document.querySelector('.btn-tema');
+    if(b) b.textContent = oscuro ? '☀️' : '🌙';
+}
+(function(){
+    const b = document.querySelector('.btn-tema');
+    if(b) b.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+})();
 </script>
 
 </body>
